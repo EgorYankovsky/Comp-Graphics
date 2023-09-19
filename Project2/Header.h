@@ -24,15 +24,139 @@ using namespace std;
 #define YELLOW      16  // 255 255   0
 #define WHITE       17  // 255 255 255
 
-GLint Width = 1024, Height = 512;
-int CurrentGroupIndex = 0;
+#define CLOCKWISE        0
+#define COUNTERCLOCKWISE 1
 
-struct type_point
+#define MOVENEXT 0
+#define MOVEPREV 1
+
+GLint WINDOW_WIDTH = 1024;
+GLint WINDOW_HEIGTH = 512;
+const GLubyte ACTIVE_GROUP_OPACITY = 255;
+const GLubyte DEFAULT_GROUP_OPACITY = 100;
+
+GLuint activeGroupIndex = -1;
+
+class Color
 {
-   GLint x, y;
-   type_point(GLint _x, GLint _y) { x = _x; y = _y; }
+public:
+   GLubyte R;
+   GLubyte G;
+   GLubyte B;
+
+   Color(GLubyte R, GLubyte G, GLubyte B) {
+      this->R = R;
+      this->G = G;
+      this->B = B;
+   }
+
+   Color() {
+      this->R = 255;
+      this->G = 0;
+      this->B = 0;
+   }
 };
 
-vector <type_point> Points;
-vector <int> Refs{ 0 };
-vector <vector<int>> ColorGroups{ {255, 0, 0} };
+struct Point
+{
+   GLint x, y;
+
+   Point(GLint x, GLint y) {
+      this->x = x;
+      this->y = y;
+   }
+};
+
+class Group
+{
+public:
+   int x_mid, y_mid;
+   vector<Point> points = {};
+   Color color;
+
+   int Size()
+   {
+      return points.size();
+   }
+
+   void addNewPoint(Point p) {
+      points.push_back(p);
+   }
+
+   bool removeLastPoint() {
+      if (points.size() > 0) {
+         points.pop_back();
+         return true;
+      }
+      else {
+         return false;
+      }
+   }
+
+   void countMidPoints()
+   {
+      x_mid = 0;
+      y_mid = 0;
+      for (Point p : points)
+      {
+         x_mid += p.x;
+         y_mid += p.y;
+      }
+      x_mid /= points.size();
+      y_mid /= points.size();
+   }
+};
+vector<Group> groups {};
+
+void Rotate(Group* gr)
+{
+   for (Point& p : gr->points)
+      p = Point(gr->x_mid + gr->y_mid - p.y,
+         -1 * gr->x_mid + gr->y_mid + p.x);
+}
+
+void BackRotate(Group* gr)
+{
+   for (Point& p : gr->points)
+      p = Point(gr->x_mid - gr->y_mid + p.y,
+         gr->x_mid + gr->y_mid - p.x);
+}
+
+void Delete(int a)
+{
+   switch (a)
+   {
+   case 0:
+      if (groups.size() > 0) {
+         groups.erase(groups.begin() + activeGroupIndex);
+         activeGroupIndex--;
+      }
+      break;
+   case 1:
+      if (groups[activeGroupIndex].points.size() == 0) {
+         cerr << "Group is empty" << endl;
+      }
+      else {
+         groups[activeGroupIndex].points.pop_back();
+      }
+      break;
+   }
+   glutPostRedisplay();
+}
+void MoveNext()
+{
+   if (activeGroupIndex == groups.size() - 1)
+      activeGroupIndex = 0;
+   else
+      activeGroupIndex++;
+   glutPostRedisplay();
+}
+
+void MovePrev()
+{
+   if (activeGroupIndex == 0)
+      activeGroupIndex = groups.size() - 1;
+   else
+      activeGroupIndex--;
+   glutPostRedisplay();
+}
