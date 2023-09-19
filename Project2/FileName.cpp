@@ -86,7 +86,6 @@ void Keyboard(unsigned char key, int x, int y)
       activeGroup->color.B -= 5;
       break;
 
-
       /* Изменение XY-кординат точек */
    case 'w':
       for (Point& point : activeGroup->points) {

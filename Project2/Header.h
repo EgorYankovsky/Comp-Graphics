@@ -74,8 +74,7 @@ public:
    vector<Point> points = {};
    Color color;
 
-   int Size()
-   {
+   int Size() {
       return points.size();
    }
 
@@ -97,8 +96,7 @@ public:
    {
       x_mid = 0;
       y_mid = 0;
-      for (Point p : points)
-      {
+      for (Point p : points) {
          x_mid += p.x;
          y_mid += p.y;
       }
