@@ -358,8 +358,7 @@ void ShowMenu()
 /* Головная программа */
 void main(int argc, char* argv[])
 {
-   if (groups.empty())
-   {
+   if (groups.empty()){
       groups.push_back(Group{});
       activeGroupIndex = groups.size() - 1;
    }

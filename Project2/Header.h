@@ -141,6 +141,7 @@ void Delete(int a)
    }
    glutPostRedisplay();
 }
+
 void MoveNext()
 {
    if (activeGroupIndex == groups.size() - 1)
