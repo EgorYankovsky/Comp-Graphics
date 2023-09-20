@@ -1,4 +1,8 @@
 #pragma once
+
+#pragma comment (linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup") 
+#pragma comment (lib, "glut32.lib")
+
 #include <vector>
 #include <iostream>
 #include "glut.h"
@@ -27,8 +31,16 @@ using namespace std;
 #define CLOCKWISE        0
 #define COUNTERCLOCKWISE 1
 
-#define MOVENEXT 0
-#define MOVEPREV 1
+#define SELECTNEXT 0
+#define SELECTPREV 1
+
+#define UP 0
+#define DOWN 1
+#define LEFT 2
+#define RIGHT 3
+
+const double sin15 = 0.2588190451025208;
+const double cos15 = 0.9659258262890683;
 
 GLint WINDOW_WIDTH = 1024;
 GLint WINDOW_HEIGTH = 512;
@@ -70,6 +82,7 @@ struct Point
 class Group
 {
 public:
+   int pointsAmount;
    int x_mid, y_mid;
    vector<Point> points = {};
    Color color;
@@ -94,30 +107,32 @@ public:
 
    void countMidPoints()
    {
+      pointsAmount = 0;
       x_mid = 0;
       y_mid = 0;
       for (Point p : points) {
          x_mid += p.x;
          y_mid += p.y;
+         pointsAmount++;
       }
       x_mid /= points.size();
       y_mid /= points.size();
    }
 };
-vector<Group> groups {};
+vector<Group> groups{};
 
 void Rotate(Group* gr)
 {
    for (Point& p : gr->points)
-      p = Point(gr->x_mid + gr->y_mid - p.y,
-         -1 * gr->x_mid + gr->y_mid + p.x);
+      p = Point(cos15 * (p.x - gr->x_mid) - sin15 * (p.y - gr->y_mid) + gr->x_mid,
+         cos15 * (p.y - gr->y_mid) + sin15 * (p.x - gr->x_mid) + gr->y_mid);
 }
 
 void BackRotate(Group* gr)
 {
    for (Point& p : gr->points)
-      p = Point(gr->x_mid - gr->y_mid + p.y,
-         gr->x_mid + gr->y_mid - p.x);
+      p = Point(cos15 * (p.x - gr->x_mid) + sin15 * (p.y - gr->y_mid) + gr->x_mid,
+         cos15 * (p.y - gr->y_mid) - sin15 * (p.x - gr->x_mid) + gr->y_mid);
 }
 
 void Delete(int a)
@@ -142,7 +157,7 @@ void Delete(int a)
    glutPostRedisplay();
 }
 
-void MoveNext()
+void SelectNext()
 {
    if (activeGroupIndex == groups.size() - 1)
       activeGroupIndex = 0;
@@ -151,7 +166,7 @@ void MoveNext()
    glutPostRedisplay();
 }
 
-void MovePrev()
+void SelectPrev()
 {
    if (activeGroupIndex == 0)
       activeGroupIndex = groups.size() - 1;
@@ -159,3 +174,37 @@ void MovePrev()
       activeGroupIndex--;
    glutPostRedisplay();
 }
+
+void Move(Group* gr, int a)
+{
+   switch (a)
+   {
+   case UP:
+      for (Point& point : gr->points)
+         point.y += 9;
+      break;
+   case DOWN:
+      for (Point& point : gr->points)
+         point.y -= 9;
+      break;
+   case LEFT:
+      for (Point& point : gr->points)
+         point.x -= 9;
+      break;
+   case RIGHT:
+      for (Point& point : gr->points)
+         point.x += 9;
+      break;
+   }
+   glutPostRedisplay();
+}
+
+void ColorMenu(int switcher);
+
+void MainMenu(int a);
+
+void RotateMenu(int switcher);
+
+void SelectMenu(int switcher);
+
+void MoveMenu(int switcher);

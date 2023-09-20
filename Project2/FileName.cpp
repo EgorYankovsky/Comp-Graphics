@@ -1,6 +1,5 @@
 #include "Header.h"
 
-/* Функция вывода на экран */
 void Display(void)
 {
    int pointSize = 16;
@@ -27,7 +26,6 @@ void Display(void)
    glFinish();
 }
 
-/* Функция изменения размеров окна */
 void Reshape(GLint w, GLint h)
 {
    WINDOW_WIDTH = w; WINDOW_HEIGTH = h;
@@ -39,10 +37,12 @@ void Reshape(GLint w, GLint h)
    glLoadIdentity();
 }
 
-/* Функция обработки сообщений от клавиатуры */
 void Keyboard(unsigned char key, int x, int y)
 {
-   if (key == '\r' && !groups.back().points.empty()) {
+   if (key == '\r') {
+      for (Group gr : groups)
+         if (gr.Size() == 0)
+            return;
       groups.push_back(Group{});
       activeGroupIndex = groups.size() - 1;
    }
@@ -52,15 +52,13 @@ void Keyboard(unsigned char key, int x, int y)
    }
 
    Group* activeGroup = &groups[activeGroupIndex];
-   if (activeGroup->Size() != 0)
+   if (activeGroup->Size() != 0 && activeGroup->points.size() != activeGroup->pointsAmount)
       activeGroup->countMidPoints();
 
    switch (key) {
-   /* Поворот против часовой стрелки */
    case 't':
       Rotate(activeGroup);
       break;
-   /* Поворот по часовой стрелке */
    case 'T':
       BackRotate(activeGroup);
       break;
@@ -86,56 +84,43 @@ void Keyboard(unsigned char key, int x, int y)
       activeGroup->color.B -= 5;
       break;
 
-      /* Изменение XY-кординат точек */
    case 'w':
-      for (Point& point : activeGroup->points) {
-         point.y += 9;
-      }
+      Move(activeGroup, UP);
       break;
    case 's':
-      for (Point& point : activeGroup->points) {
-         point.y -= 9;
-      }
+      Move(activeGroup, DOWN);
       break;
    case 'a':
-      for (Point& point : activeGroup->points) {
-         point.x -= 9;
-      }
+      Move(activeGroup, LEFT);
       break;
    case 'd':
-      for (Point& point : activeGroup->points) 
-         point.x += 9;
+      Move(activeGroup, RIGHT);
       break;
 
-      /* Выбор предыдущей группы */
    case '<':
-      MovePrev();
+      SelectPrev();
       break;
 
-      /* Выбор следующей группы */
    case '>':
-      MoveNext();
+      SelectNext();
       break;
 
-   /* Удаление */
-   case 127: 
-      Delete(0); 
+   case 127:
+      Delete(0);
       break;
 
-   case '\b': 
-      Delete(1); 
+   case '\b':
+   case 26:
+      Delete(1);
       break;
    }
    glutPostRedisplay();
 }
 
-/* Функция обработки сообщения от мыши */
 void Mouse(int button, int state, int x, int y)
 {
-   /* клавиша была нажата, но не отпущена */
    if (state != GLUT_DOWN) return;
 
-   /* новая точка по левому клику */
    if (button == GLUT_LEFT_BUTTON)
    {
       if (groups.size() > 0) {
@@ -153,131 +138,95 @@ void ColorMenu(int switcher)
    switch (switcher)
    {
    case BLACK:
-   {
       activeGroup->color.R = 0;
       activeGroup->color.G = 0;
       activeGroup->color.B = 0;
       break;
-   }
    case NAVY:
-   {
       activeGroup->color.R = 0;
       activeGroup->color.G = 0;
       activeGroup->color.B = 127;
       break;
-   }
    case BLUE:
-   {
       activeGroup->color.R = 0;
       activeGroup->color.G = 0;
       activeGroup->color.B = 255;
       break;
-   }
    case GREEN:
-   {
       activeGroup->color.R = 0;
       activeGroup->color.G = 128;
       activeGroup->color.B = 0;
       break;
-   }
    case TEAL:
-   {
       activeGroup->color.R = 0;
       activeGroup->color.G = 128;
       activeGroup->color.B = 128;
       break;
-   }
    case LIME:
-   {
       activeGroup->color.R = 0;
       activeGroup->color.G = 255;
       activeGroup->color.B = 0;
       break;
-   }
    case SPRINGGREEN:
-   {
       activeGroup->color.R = 0;
       activeGroup->color.G = 255;
       activeGroup->color.B = 127;
       break;
-   }
    case AQUA:
-   {
       activeGroup->color.R = 0;
       activeGroup->color.G = 255;
       activeGroup->color.B = 255;
       break;
-   }
    case MAROON:
-   {
       activeGroup->color.R = 128;
       activeGroup->color.G = 0;
       activeGroup->color.B = 0;
       break;
-   }
    case PURPLE:
-   {
       activeGroup->color.R = 128;
       activeGroup->color.G = 0;
       activeGroup->color.B = 128;
       break;
-   }
    case OLIVE:
-   {
       activeGroup->color.R = 128;
       activeGroup->color.G = 128;
       activeGroup->color.B = 0;
       break;
-   }
    case GRAY:
-   {
       activeGroup->color.R = 128;
       activeGroup->color.G = 128;
       activeGroup->color.B = 128;
       break;
-   }
    case CHARTREUSE:
-   {
       activeGroup->color.R = 127;
       activeGroup->color.G = 255;
       activeGroup->color.B = 0;
       break;
-   }
    case RED:
-   {
       activeGroup->color.R = 255;
       activeGroup->color.G = 0;
       activeGroup->color.B = 0;
       break;
-   }
    case FUCHSIA:
-   {
       activeGroup->color.R = 255;
       activeGroup->color.G = 0;
       activeGroup->color.B = 255;
       break;
-   }
    case ORANGE:
-   {
       activeGroup->color.R = 255;
       activeGroup->color.G = 165;
       activeGroup->color.B = 0;
       break;
-   }
    case YELLOW:
-   {
       activeGroup->color.R = 255;
       activeGroup->color.G = 255;
       activeGroup->color.B = 0;
       break;
-   }
    case WHITE:
-   {
       activeGroup->color.R = 255;
       activeGroup->color.G = 255;
       activeGroup->color.B = 255;
       break;
-   }
    }
    glutPostRedisplay();
 }
@@ -285,7 +234,7 @@ void ColorMenu(int switcher)
 void RotateMenu(int switcher)
 {
    Group* activeGroup = &groups[activeGroupIndex];
-   if (activeGroup->Size() != 0)
+   if (activeGroup->Size() != 0 && activeGroup->points.size() != activeGroup->pointsAmount)
       activeGroup->countMidPoints();
    switch (switcher)
    {
@@ -299,18 +248,25 @@ void RotateMenu(int switcher)
    glutPostRedisplay();
 }
 
-void MoveMenu(int switcher)
+void SelectMenu(int switcher)
 {
    switch (switcher)
    {
-   case MOVENEXT:
-      MoveNext();
+   case SELECTNEXT:
+      SelectNext();
       break;
-   case MOVEPREV:
-      MovePrev();
+   case SELECTPREV:
+      SelectPrev();
       break;
    }
 }
+
+void MoveMenu(int switcher)
+{
+   Group* activeGroup = &groups[activeGroupIndex];
+   Move(activeGroup, switcher);
+}
+
 
 void ShowMenu()
 {
@@ -342,36 +298,41 @@ void ShowMenu()
    glutAddMenuEntry("Delete group", 0);
    glutAddMenuEntry("Delete last item", 1);
 
+   int SM = glutCreateMenu(SelectMenu);
+   glutAddMenuEntry("Select previous", SELECTPREV);
+   glutAddMenuEntry("Select next", SELECTNEXT);
+
    int MvM = glutCreateMenu(MoveMenu);
-   glutAddMenuEntry("Move previous", MOVEPREV);
-   glutAddMenuEntry("Move next", MOVENEXT);
+   glutAddMenuEntry("Up", UP);
+   glutAddMenuEntry("Down", DOWN);
+   glutAddMenuEntry("Left", LEFT);
+   glutAddMenuEntry("Right", RIGHT);
 
    int MM = glutCreateMenu(MainMenu);
-   glutAddSubMenu("Color menu", CM);
-   glutAddSubMenu("Rotate menu", RM);
+   glutAddSubMenu("Color", CM);
+   glutAddSubMenu("Rotate", RM);
    glutAddSubMenu("Delete", DM);
+   glutAddSubMenu("Select", SM);
    glutAddSubMenu("Move", MvM);
 
    glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
-/* Головная программа */
 void main(int argc, char* argv[])
 {
-   if (groups.empty()){
+   if (groups.empty()) {
       groups.push_back(Group{});
-      activeGroupIndex = groups.size() - 1;
+      activeGroupIndex = 0;
    }
    glutInit(&argc, argv);
    glutInitDisplayMode(GLUT_RGB);
    glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGTH);
-   glutCreateWindow("ЛР 1. Саляев Янковский");
+   glutCreateWindow("LR 1. Salyaev Yankovskij");
    ShowMenu();
    glutDisplayFunc(Display);
    glutReshapeFunc(Reshape);
    glutKeyboardFunc(Keyboard);
    glutMouseFunc(Mouse);
 
-   /* Функция, запускающая бесконечный цикл для работы с графическими объектами. */
    glutMainLoop();
 }
