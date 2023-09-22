@@ -142,7 +142,10 @@ void Delete(int a)
    case 0:
       if (groups.size() > 0) {
          groups.erase(groups.begin() + activeGroupIndex);
-         activeGroupIndex--;
+         if (activeGroupIndex == 0)
+            activeGroupIndex = groups.size() - 1;
+         else 
+            activeGroupIndex--;
       }
       break;
    case 1:
