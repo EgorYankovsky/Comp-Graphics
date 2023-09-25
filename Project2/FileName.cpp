@@ -10,23 +10,39 @@
 
 void Display(void)
 {
-   int pointSize = 16;
+   int pointSize = 6;
    glClearColor(1, 1, 1, 1);
    glClear(GL_COLOR_BUFFER_BIT);
-   glEnable(GL_POINT_SMOOTH);
    glEnable(GL_BLEND);
 
    for (int i = 0; i < groups.size(); i++) {
       if (i == activeGroupIndex) {
          glPointSize(pointSize + 10);
-         glColor4ub(groups[i].color.R, groups[i].color.G, groups[i].color.B, ACTIVE_GROUP_OPACITY);
+         glEnable(GL_POINT_SMOOTH);
       }
       else {
          glPointSize(pointSize);
-         glColor4ub(groups[i].color.R, groups[i].color.G, groups[i].color.B, DEFAULT_GROUP_OPACITY);
+         glDisable(GL_POINT_SMOOTH);
       }
+      
+      glBegin(GL_POLYGON);
+      for (Point point : groups[i].points) {
+         glColor4ub(groups[i].color.R, groups[i].color.G, groups[i].color.B, DEFAULT_GROUP_OPACITY);
+         glVertex2i(point.x, point.y);
+      }
+      glEnd();
+
+      glLineWidth(3);
+      glBegin(GL_LINE_LOOP);
+      for (Point point : groups[i].points) {
+         glColor4ub(0, 0, 0, DEFAULT_GROUP_OPACITY);
+         glVertex2i(point.x, point.y);
+      }
+      glEnd();
+
       glBegin(GL_POINTS);
       for (Point point : groups[i].points) {
+         glColor4ub(0, 0, 0, DEFAULT_GROUP_OPACITY);
          glVertex2i(point.x, point.y);
       }
       glEnd();
@@ -65,6 +81,14 @@ void Keyboard(unsigned char key, int x, int y)
       break;
    case 'T':
       BackRotate(activeGroup);
+      break;
+
+   case '+':
+      Increase(activeGroup);
+      break;
+
+   case '-':
+      Reduce(activeGroup);
       break;
 
    case 'r':
@@ -286,6 +310,23 @@ void MoveMenu(int switcher)
    Move(activeGroup, switcher);
 }
 
+void ZoomMenu(int switcher)
+{
+   Group* activeGroup = &groups[activeGroupIndex];
+   if (activeGroup->Size() != 0 && activeGroup->points.size() != activeGroup->pointsAmount)
+      activeGroup->countMidPoints();
+   switch (switcher)
+   {
+   case 0:
+      Increase(activeGroup);
+      break;
+   case 1:
+      Reduce(activeGroup);
+      break;
+   }
+   glutPostRedisplay();
+}
+
 void ShowMenu()
 {
    int CM = glutCreateMenu(ColorMenu);
@@ -322,11 +363,16 @@ void ShowMenu()
    glutAddMenuEntry("Left", LEFT);
    glutAddMenuEntry("Right", RIGHT);
 
+   int ZM = glutCreateMenu(ZoomMenu);
+   glutAddMenuEntry("Increase", 0);
+   glutAddMenuEntry("Reduce", 1);
+
    int MM = glutCreateMenu(MainMenu);
    glutAddSubMenu("Color", CM);
    glutAddSubMenu("Rotate", RM);
    glutAddSubMenu("Select", SM);
    glutAddSubMenu("Move", MvM);
+   glutAddSubMenu("Zoom", ZM);
    glutAddMenuEntry("Push back group", -1);
    glutAddMenuEntry("Delete group", 0);
    glutAddMenuEntry("Delete last primitive", 1);

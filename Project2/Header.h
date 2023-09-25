@@ -210,3 +210,15 @@ void CreateGroup()
    groups.push_back(Group{});
    activeGroupIndex = groups.size() - 1;
 }
+
+void Increase(Group* gr)
+{
+   for (Point& p : gr->points)
+      p = Point(p.x + 0.2 * (p.x - gr->x_mid), p.y + 0.2 * (p.y - gr->y_mid));
+}
+
+void Reduce(Group* gr)
+{
+   for (Point& p : gr->points)
+      p = Point(p.x - 0.2 * (p.x - gr->x_mid), p.y - 0.2 * (p.y - gr->y_mid));
+}
