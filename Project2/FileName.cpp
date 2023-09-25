@@ -1,5 +1,13 @@
 #include "Header.h"
 
+/*
+   1) изменение не только координат и цвета вершин примитивов, но
+      и режимов сглаживания, шаблона закрашивания примитива, …;
+   2) изменение параметров (в том числе и удаление) не только текущего набора примитивов, но и произвольного.
+   3) изменение параметров произвольного примитива в наборе.
+*/
+
+
 void Display(void)
 {
    int pointSize = 16;
@@ -40,11 +48,7 @@ void Reshape(GLint w, GLint h)
 void Keyboard(unsigned char key, int x, int y)
 {
    if (key == '\r') {
-      for (Group gr : groups)
-         if (gr.Size() == 0)
-            return;
-      groups.push_back(Group{});
-      activeGroupIndex = groups.size() - 1;
+      CreateGroup();
    }
 
    if (activeGroupIndex == -1) {
@@ -130,7 +134,22 @@ void Mouse(int button, int state, int x, int y)
    glutPostRedisplay();
 }
 
-void MainMenu(int a) {}
+void MainMenu(int a)
+{
+   switch (a)
+   {
+   case -1:
+      CreateGroup();
+      break;
+   case 0:
+      Delete(0);
+      break;
+   case 1:
+      Delete(1);
+      break;
+   }
+   glutPostRedisplay();
+}
 
 void ColorMenu(int switcher)
 {
@@ -267,7 +286,6 @@ void MoveMenu(int switcher)
    Move(activeGroup, switcher);
 }
 
-
 void ShowMenu()
 {
    int CM = glutCreateMenu(ColorMenu);
@@ -294,10 +312,6 @@ void ShowMenu()
    glutAddMenuEntry("Clockwise", CLOCKWISE);
    glutAddMenuEntry("Counterclockwise", COUNTERCLOCKWISE);
 
-   int DM = glutCreateMenu(Delete);
-   glutAddMenuEntry("Delete group", 0);
-   glutAddMenuEntry("Delete last item", 1);
-
    int SM = glutCreateMenu(SelectMenu);
    glutAddMenuEntry("Select previous", SELECTPREV);
    glutAddMenuEntry("Select next", SELECTNEXT);
@@ -311,9 +325,11 @@ void ShowMenu()
    int MM = glutCreateMenu(MainMenu);
    glutAddSubMenu("Color", CM);
    glutAddSubMenu("Rotate", RM);
-   glutAddSubMenu("Delete", DM);
    glutAddSubMenu("Select", SM);
    glutAddSubMenu("Move", MvM);
+   glutAddMenuEntry("Push back group", -1);
+   glutAddMenuEntry("Delete group", 0);
+   glutAddMenuEntry("Delete last primitive", 1);
 
    glutAttachMenu(GLUT_RIGHT_BUTTON);
 }

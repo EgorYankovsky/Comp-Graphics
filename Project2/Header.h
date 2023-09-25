@@ -121,6 +121,30 @@ public:
 };
 vector<Group> groups{};
 
+void Move(Group* gr, int a)
+{
+   switch (a)
+   {
+   case UP:
+      for (Point& point : gr->points)
+         point.y += 9;
+      break;
+   case DOWN:
+      for (Point& point : gr->points)
+         point.y -= 9;
+      break;
+   case LEFT:
+      for (Point& point : gr->points)
+         point.x -= 9;
+      break;
+   case RIGHT:
+      for (Point& point : gr->points)
+         point.x += 9;
+      break;
+   }
+   glutPostRedisplay();
+}
+
 void Rotate(Group* gr)
 {
    for (Point& p : gr->points)
@@ -178,36 +202,11 @@ void SelectPrev()
    glutPostRedisplay();
 }
 
-void Move(Group* gr, int a)
+void CreateGroup()
 {
-   switch (a)
-   {
-   case UP:
-      for (Point& point : gr->points)
-         point.y += 9;
-      break;
-   case DOWN:
-      for (Point& point : gr->points)
-         point.y -= 9;
-      break;
-   case LEFT:
-      for (Point& point : gr->points)
-         point.x -= 9;
-      break;
-   case RIGHT:
-      for (Point& point : gr->points)
-         point.x += 9;
-      break;
-   }
-   glutPostRedisplay();
+   for (Group gr : groups)
+      if (gr.Size() == 0)
+         return;
+   groups.push_back(Group{});
+   activeGroupIndex = groups.size() - 1;
 }
-
-void ColorMenu(int switcher);
-
-void MainMenu(int a);
-
-void RotateMenu(int switcher);
-
-void SelectMenu(int switcher);
-
-void MoveMenu(int switcher);
