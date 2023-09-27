@@ -64,8 +64,8 @@ public:
 
    Color() {
       this->R = 255;
-      this->G = 0;
-      this->B = 0;
+      this->G = 255;
+      this->B = 255;
    }
 };
 
