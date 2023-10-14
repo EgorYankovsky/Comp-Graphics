@@ -1,70 +1,58 @@
 #include "Header.h"
 
 /*
-   TODO:
-      
-      1. (+) Отобразить в окне множество примитивов (вершины которых задаются кликами мыши) в соответствии с вариантом задания.
-      
-      2. (+) Для завершения текущего (активного) набора (множества) примитивов и начала нового зарезервировать специальную клавишу (пробел или правый клик).
-      
-      3. (+) Для текущего набора примитивов предоставить возможность изменения цвета и координат его вершин.
-      
-      4. (+) Текущее множество примитивов выделять среди других, например, изменением размера его вершин командой glPointSize(*).
-      
-      5. (+) Использовать контейнер vector из библиотеки STL для хранения набора примитивов и множества вершин каждого примитива,
-         а для хранения атрибутов рекомендуется использовать стандартный класс struct.
-      
-      6. (+) Предусмотреть возможность удаления последнего примитива и последнего набора примитивов.
-      
-      7. Продублировать команды в меню, созданном с помощью библиотеки GLUT.
+   1) изменение не только координат и цвета вершин примитивов, но
+      и режимов сглаживания, шаблона закрашивания примитива, …;
+   2) изменение параметров (в том числе и удаление) не только текущего набора примитивов, но и произвольного.
+   3) изменение параметров произвольного примитива в наборе.
 */
 
-/* Функция вывода на экран */
+
 void Display(void)
 {
-   int pointSize = 16;
-   glClearColor(1, 1, 1, 0);
+   int pointSize = 6;
+   glClearColor(1, 1, 1, 1);
    glClear(GL_COLOR_BUFFER_BIT);
+   glEnable(GL_BLEND);
 
-   // Предыдущие точки
-   glPointSize(pointSize);
-   glEnable(GL_POINT_SMOOTH);
-   glBegin(GL_POINTS);
-   
-   for (int ii = 0; ii < Refs.size() - 1; ii++)
-   {
-      for (int i = Refs[ii]; i < Refs[ii + 1]; i++)
-      {
-         glColor3ub(ColorGroups[ii][0],
-                    ColorGroups[ii][1],
-                    ColorGroups[ii][2]);
-
-         glVertex2i(Points[i].x, Points[i].y);
+   for (int i = 0; i < groups.size(); i++) {
+      if (i == activeGroupIndex) {
+         glPointSize(pointSize + 10);
+         glEnable(GL_POINT_SMOOTH);
       }
-   }
-   glEnd();
-   glFinish();
+      else {
+         glPointSize(pointSize);
+         glDisable(GL_POINT_SMOOTH);
+      }
+      
+      glBegin(GL_POLYGON);
+      for (Point point : groups[i].points) {
+         glColor4ub(groups[i].color.R, groups[i].color.G, groups[i].color.B, DEFAULT_GROUP_OPACITY);
+         glVertex2i(point.x, point.y);
+      }
+      glEnd();
 
-   // Текущие точки
-   glPointSize(pointSize + 10);
-   glEnable(GL_POINT_SMOOTH);
-   glBegin(GL_POINTS);
+      glLineWidth(3);
+      glBegin(GL_LINE_LOOP);
+      for (Point point : groups[i].points) {
+         glColor4ub(0, 0, 0, DEFAULT_GROUP_OPACITY);
+         glVertex2i(point.x, point.y);
+      }
+      glEnd();
 
-   for (int i = Refs.back(); i < Points.size(); i++)
-   {
-      glColor3ub(ColorGroups[ColorGroups.size() - 1][0],
-                 ColorGroups[ColorGroups.size() - 1][1],
-                 ColorGroups[ColorGroups.size() - 1][2]);
-      glVertex2i(Points[i].x, Points[i].y);
+      glBegin(GL_POINTS);
+      for (Point point : groups[i].points) {
+         glColor4ub(0, 0, 0, DEFAULT_GROUP_OPACITY);
+         glVertex2i(point.x, point.y);
+      }
+      glEnd();
    }
-   glEnd();
    glFinish();
 }
 
-/* Функция изменения размеров окна */
 void Reshape(GLint w, GLint h)
 {
-   Width = w; Height = h;
+   WINDOW_WIDTH = w; WINDOW_HEIGTH = h;
    glViewport(0, 0, w, h);
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
@@ -73,239 +61,272 @@ void Reshape(GLint w, GLint h)
    glLoadIdentity();
 }
 
-/* Функция обработки сообщений от клавиатуры */
 void Keyboard(unsigned char key, int x, int y)
 {
-   int i, n = Points.size();
-
-   if (key == '<')
-   {
-      /* Предыдущая группа */
-   }
-   if (key == '>')
-   {
-      /* Следующая группа */
+   if (key == '\r') {
+      CreateGroup();
    }
 
-
-   /* Изменение RGB-компонент цвета точек */
-   if (key == 'r') ColorGroups[ColorGroups.size() - 1][0] += 5;
-   if (key == 'R') ColorGroups[ColorGroups.size() - 1][0] -= 5;
-
-   if (key == 'g') ColorGroups[ColorGroups.size() - 1][1] += 5;
-   if (key == 'G') ColorGroups[ColorGroups.size() - 1][1] -= 5;
-
-   if (key == 'b') ColorGroups[ColorGroups.size() - 1][2] += 5;
-   if (key == 'B') ColorGroups[ColorGroups.size() - 1][2] -= 5;
-   
-   /* Изменение XY-кординат точек */
-   if (key == 'w') for (i = Refs.back(); i < n; i++) Points[i].y += 9;
-   if (key == 's') for (i = Refs.back(); i < n; i++) Points[i].y -= 9;
-   if (key == 'a') for (i = Refs.back(); i < n; i++) Points[i].x -= 9;
-   if (key == 'd') for (i = Refs.back(); i < n; i++) Points[i].x += 9;
-
-   /* Создание новой группы точек на Enter */
-   if (key == '\r')
-   {
-      /* Добавляем только в том случае, если группа не пустая */
-      if (Points.size() != Refs.back())
-      {
-         Refs.push_back(Points.size());
-         ColorGroups.push_back(vector<int> {255, 0, 0});
-         CurrentGroupIndex++;
-      }
+   if (activeGroupIndex == -1) {
+      return;
    }
 
-   /* Удаление точек на backspace */
-   if (key == '\b')
-   {
-      if (Points.size() == 0) cerr << "Points is empty" << endl;
-      else if (Points.size() == Refs.back())
-      {
-         Refs.pop_back();
-         ColorGroups.pop_back();
-         CurrentGroupIndex--;
-      }
-      else
-      {
-         Points.pop_back();
-         if (Points.size() < Refs.back())
-         {
-            Refs.pop_back();
-            ColorGroups.pop_back();
-            CurrentGroupIndex--;
-         }
-      }
-   }
+   Group* activeGroup = &groups[activeGroupIndex];
+   if (activeGroup->Size() != 0 && activeGroup->points.size() != activeGroup->pointsAmount)
+      activeGroup->countMidPoints();
 
-   /* Удаление всей группы точек */
-   if (key == 127)
-   {
-      int last = Points.size() - 1;
-      for (int i = last; i >= Refs.back(); i--) Points.pop_back();
-   }
+   switch (key) {
+   case 't':
+      Rotate(activeGroup);
+      break;
+   case 'T':
+      BackRotate(activeGroup);
+      break;
 
+   case '+':
+      Increase(activeGroup);
+      break;
+
+   case '-':
+      Reduce(activeGroup);
+      break;
+
+   case 'r':
+      activeGroup->color.R += 5;
+      break;
+   case 'R':
+      activeGroup->color.R -= 5;
+      break;
+
+   case 'g':
+      activeGroup->color.G += 5;
+      break;
+   case 'G':
+      activeGroup->color.G -= 5;
+      break;
+
+   case 'b':
+      activeGroup->color.B += 5;
+      break;
+   case 'B':
+      activeGroup->color.B -= 5;
+      break;
+
+   case 'w':
+      Move(activeGroup, UP);
+      break;
+   case 's':
+      Move(activeGroup, DOWN);
+      break;
+   case 'a':
+      Move(activeGroup, LEFT);
+      break;
+   case 'd':
+      Move(activeGroup, RIGHT);
+      break;
+
+   case '<':
+      SelectPrev();
+      break;
+
+   case '>':
+      SelectNext();
+      break;
+
+   case 127:
+      Delete(0);
+      break;
+
+   case '\b':
+   case 26:
+      Delete(1);
+      break;
+   }
    glutPostRedisplay();
 }
 
-/* Функция обработки сообщения от мыши */
 void Mouse(int button, int state, int x, int y)
 {
-   /* клавиша была нажата, но не отпущена */
    if (state != GLUT_DOWN) return;
 
-   /* новая точка по левому клику */
    if (button == GLUT_LEFT_BUTTON)
    {
-      if (Points.size() > 0) Points.push_back(type_point(x, Height - y));
-      if (Points.size() == 0)
-      {
-         Points = { type_point(x, Height - y) };
-         Refs = { 0 };
+      if (groups.size() > 0) {
+         groups[activeGroupIndex].points.push_back(Point{ x, WINDOW_HEIGTH - y });
       }
    }
    glutPostRedisplay();
 }
 
-/* Головная функция для меню */
-void processMainMenu(int a) {}
+void MainMenu(int a)
+{
+   switch (a)
+   {
+   case -1:
+      CreateGroup();
+      break;
+   case 0:
+      Delete(0);
+      break;
+   case 1:
+      Delete(1);
+      break;
+   }
+   glutPostRedisplay();
+}
 
-/* Цветовое меню */
 void ColorMenu(int switcher)
 {
+   Group* activeGroup = &groups[activeGroupIndex];
    switch (switcher)
    {
    case BLACK:
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 0;
-      ColorGroups[ColorGroups.size() - 1][1] = 0;
-      ColorGroups[ColorGroups.size() - 1][2] = 0;
-      return;
-   }
+      activeGroup->color.R = 0;
+      activeGroup->color.G = 0;
+      activeGroup->color.B = 0;
+      break;
    case NAVY:
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 0;
-      ColorGroups[ColorGroups.size() - 1][1] = 0;
-      ColorGroups[ColorGroups.size() - 1][2] = 127;
-      return;
-   }
+      activeGroup->color.R = 0;
+      activeGroup->color.G = 0;
+      activeGroup->color.B = 127;
+      break;
    case BLUE:
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 0;
-      ColorGroups[ColorGroups.size() - 1][1] = 0;
-      ColorGroups[ColorGroups.size() - 1][2] = 255;
-      return;
-   }
+      activeGroup->color.R = 0;
+      activeGroup->color.G = 0;
+      activeGroup->color.B = 255;
+      break;
    case GREEN:
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 0;
-      ColorGroups[ColorGroups.size() - 1][1] = 128;
-      ColorGroups[ColorGroups.size() - 1][2] = 0;
-      return;
-   }
+      activeGroup->color.R = 0;
+      activeGroup->color.G = 128;
+      activeGroup->color.B = 0;
+      break;
    case TEAL:
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 0;
-      ColorGroups[ColorGroups.size() - 1][1] = 128;
-      ColorGroups[ColorGroups.size() - 1][2] = 128;
-      return;
-   }
+      activeGroup->color.R = 0;
+      activeGroup->color.G = 128;
+      activeGroup->color.B = 128;
+      break;
    case LIME:
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 0;
-      ColorGroups[ColorGroups.size() - 1][1] = 255;
-      ColorGroups[ColorGroups.size() - 1][2] = 0;
-      return;
-   }
+      activeGroup->color.R = 0;
+      activeGroup->color.G = 255;
+      activeGroup->color.B = 0;
+      break;
    case SPRINGGREEN:
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 0;
-      ColorGroups[ColorGroups.size() - 1][1] = 255;
-      ColorGroups[ColorGroups.size() - 1][2] = 127;
-      return;
-   }
-   case AQUA: 
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 0;
-      ColorGroups[ColorGroups.size() - 1][1] = 255;
-      ColorGroups[ColorGroups.size() - 1][2] = 255;
-      return;
-   }
-   case MAROON: 
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 128;
-      ColorGroups[ColorGroups.size() - 1][1] = 0;
-      ColorGroups[ColorGroups.size() - 1][2] = 0;
-      return;
-   }
+      activeGroup->color.R = 0;
+      activeGroup->color.G = 255;
+      activeGroup->color.B = 127;
+      break;
+   case AQUA:
+      activeGroup->color.R = 0;
+      activeGroup->color.G = 255;
+      activeGroup->color.B = 255;
+      break;
+   case MAROON:
+      activeGroup->color.R = 128;
+      activeGroup->color.G = 0;
+      activeGroup->color.B = 0;
+      break;
    case PURPLE:
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 128;
-      ColorGroups[ColorGroups.size() - 1][1] = 0;
-      ColorGroups[ColorGroups.size() - 1][2] = 128;
-      return;
-   }
+      activeGroup->color.R = 128;
+      activeGroup->color.G = 0;
+      activeGroup->color.B = 128;
+      break;
    case OLIVE:
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 128;
-      ColorGroups[ColorGroups.size() - 1][1] = 128;
-      ColorGroups[ColorGroups.size() - 1][2] = 0;
-      return;
-   }
+      activeGroup->color.R = 128;
+      activeGroup->color.G = 128;
+      activeGroup->color.B = 0;
+      break;
    case GRAY:
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 128;
-      ColorGroups[ColorGroups.size() - 1][1] = 128;
-      ColorGroups[ColorGroups.size() - 1][2] = 128;
-      return;
-   }
+      activeGroup->color.R = 128;
+      activeGroup->color.G = 128;
+      activeGroup->color.B = 128;
+      break;
    case CHARTREUSE:
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 127;
-      ColorGroups[ColorGroups.size() - 1][1] = 255;
-      ColorGroups[ColorGroups.size() - 1][2] = 0;
-      return;
-   }
-   case RED: 
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 255;
-      ColorGroups[ColorGroups.size() - 1][1] = 0;
-      ColorGroups[ColorGroups.size() - 1][2] = 0;
-      return;
-   }
-   case FUCHSIA: 
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 255;
-      ColorGroups[ColorGroups.size() - 1][1] = 0;
-      ColorGroups[ColorGroups.size() - 1][2] = 255;
-      return;
-   }
-   case ORANGE: 
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 255;
-      ColorGroups[ColorGroups.size() - 1][1] = 165;
-      ColorGroups[ColorGroups.size() - 1][2] = 0;
-      return;
-   }
-   case YELLOW: 
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 255;
-      ColorGroups[ColorGroups.size() - 1][1] = 255;
-      ColorGroups[ColorGroups.size() - 1][2] = 0;
-      return;
-   }
+      activeGroup->color.R = 127;
+      activeGroup->color.G = 255;
+      activeGroup->color.B = 0;
+      break;
+   case RED:
+      activeGroup->color.R = 255;
+      activeGroup->color.G = 0;
+      activeGroup->color.B = 0;
+      break;
+   case FUCHSIA:
+      activeGroup->color.R = 255;
+      activeGroup->color.G = 0;
+      activeGroup->color.B = 255;
+      break;
+   case ORANGE:
+      activeGroup->color.R = 255;
+      activeGroup->color.G = 165;
+      activeGroup->color.B = 0;
+      break;
+   case YELLOW:
+      activeGroup->color.R = 255;
+      activeGroup->color.G = 255;
+      activeGroup->color.B = 0;
+      break;
    case WHITE:
-   {
-      ColorGroups[ColorGroups.size() - 1][0] = 255;
-      ColorGroups[ColorGroups.size() - 1][1] = 255;
-      ColorGroups[ColorGroups.size() - 1][2] = 255;
-      return;
-   }
+      activeGroup->color.R = 255;
+      activeGroup->color.G = 255;
+      activeGroup->color.B = 255;
+      break;
    }
    glutPostRedisplay();
 }
 
-/* Показать меню */
+void RotateMenu(int switcher)
+{
+   Group* activeGroup = &groups[activeGroupIndex];
+   if (activeGroup->Size() != 0 && activeGroup->points.size() != activeGroup->pointsAmount)
+      activeGroup->countMidPoints();
+   switch (switcher)
+   {
+   case CLOCKWISE:
+      Rotate(activeGroup);
+      break;
+   case COUNTERCLOCKWISE:
+      BackRotate(activeGroup);
+      break;
+   }
+   glutPostRedisplay();
+}
+
+void SelectMenu(int switcher)
+{
+   switch (switcher)
+   {
+   case SELECTNEXT:
+      SelectNext();
+      break;
+   case SELECTPREV:
+      SelectPrev();
+      break;
+   }
+}
+
+void MoveMenu(int switcher)
+{
+   Group* activeGroup = &groups[activeGroupIndex];
+   Move(activeGroup, switcher);
+}
+
+void ZoomMenu(int switcher)
+{
+   Group* activeGroup = &groups[activeGroupIndex];
+   if (activeGroup->Size() != 0 && activeGroup->points.size() != activeGroup->pointsAmount)
+      activeGroup->countMidPoints();
+   switch (switcher)
+   {
+   case 0:
+      Increase(activeGroup);
+      break;
+   case 1:
+      Reduce(activeGroup);
+      break;
+   }
+   glutPostRedisplay();
+}
+
 void ShowMenu()
 {
    int CM = glutCreateMenu(ColorMenu);
@@ -328,23 +349,52 @@ void ShowMenu()
    glutAddMenuEntry("Yellow", YELLOW);
    glutAddMenuEntry("White", WHITE);
 
+   int RM = glutCreateMenu(RotateMenu);
+   glutAddMenuEntry("Clockwise", CLOCKWISE);
+   glutAddMenuEntry("Counterclockwise", COUNTERCLOCKWISE);
+
+   int SM = glutCreateMenu(SelectMenu);
+   glutAddMenuEntry("Select previous", SELECTPREV);
+   glutAddMenuEntry("Select next", SELECTNEXT);
+
+   int MvM = glutCreateMenu(MoveMenu);
+   glutAddMenuEntry("Up", UP);
+   glutAddMenuEntry("Down", DOWN);
+   glutAddMenuEntry("Left", LEFT);
+   glutAddMenuEntry("Right", RIGHT);
+
+   int ZM = glutCreateMenu(ZoomMenu);
+   glutAddMenuEntry("Increase", 0);
+   glutAddMenuEntry("Reduce", 1);
+
+   int MM = glutCreateMenu(MainMenu);
+   glutAddSubMenu("Color", CM);
+   glutAddSubMenu("Rotate", RM);
+   glutAddSubMenu("Select", SM);
+   glutAddSubMenu("Move", MvM);
+   glutAddSubMenu("Zoom", ZM);
+   glutAddMenuEntry("Push back group", -1);
+   glutAddMenuEntry("Delete group", 0);
+   glutAddMenuEntry("Delete last primitive", 1);
+
    glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
-/* Головная программа */
 void main(int argc, char* argv[])
 {
+   if (groups.empty()) {
+      groups.push_back(Group{});
+      activeGroupIndex = 0;
+   }
    glutInit(&argc, argv);
    glutInitDisplayMode(GLUT_RGB);
-   glutInitWindowSize(Width, Height);
-   glutCreateWindow("ЛР 1. Саляев Янковский");
+   glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGTH);
+   glutCreateWindow("LR 1. Salyaev Yankovskij");
    ShowMenu();
-
    glutDisplayFunc(Display);
    glutReshapeFunc(Reshape);
    glutKeyboardFunc(Keyboard);
    glutMouseFunc(Mouse);
 
-   /* Функция, запускающая бесконечный цикл для работы с графическими объектами. */
    glutMainLoop();
 }
