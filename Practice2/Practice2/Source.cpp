@@ -2,32 +2,8 @@
 #pragma comment(lib, "glu32")
 #pragma comment( linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <windows.h>
-#include <gl/gl.h>
-#include "glut.h"
-#include <gl/GL.h>
-#include <gl/GLU.h>
+#include "Lab2.h"
 
-
-using namespace std;
-const float PI = 3.141592653589793;
-const float speed = 10.0f;
-
-enum rotateAxis
-{
-   rotateY, rotateX
-};
-
-struct Point
-{
-   double x, y, z;
-   Point(double _x = 0, double _y = 0, double _z = 0) {
-      x = _x; y = _y; z = _z;
-   }
-};
 Point* p;
 int light = 5;
 float angle_tiraj, angle_x = 0.0f, angle_y = 0.0f;
@@ -559,6 +535,50 @@ void makeCamera()
    norma(strafe);
 }
 
+void MoveMenu(int frag)
+{
+   switch (frag)
+   {
+   case Up:
+   {
+      // code here.
+   }
+   case Left:
+   {
+      // code here.
+   }
+   case Down:
+   {
+      // code here.
+   }
+   case Right:
+   {
+
+   }
+   default:
+      throw new exception("Unexpected move, bro. Cool your fucking");
+      break;
+   }
+}
+
+
+void LightningMenu(int frag)
+{
+
+}
+
+void ShowMenu()
+{
+   int MoveMenuID = glutCreateMenu(MoveMenu);
+   glutAddMenuEntry("Up", Up);
+   glutAddMenuEntry("Left", Left);
+   glutAddMenuEntry("Down", Down);
+   glutAddMenuEntry("Right", Right);
+
+   int LightningMenuID = glutCreateMenu(LightningMenu);
+   glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
+
 
 /* Общие замечания:
 * 1. Одна фигура статична, вторая двигается относительно нее при перемещении камеры. Баг или фича?
@@ -605,8 +625,9 @@ int main(int argc, char* argv[])
    glutInit(&argc, argv);
    glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
    int mainWindow = glutCreateWindow("КГ ПМ-02 Саляев Янковский ПЗ 2");
-
+   ShowMenu();
    glutFullScreen();
+
    glEnable(GL_DEPTH_TEST);
    glEnable(GL_POINT_SMOOTH);
    glutDisplayFunc(Display);
@@ -615,6 +636,5 @@ int main(int argc, char* argv[])
    glutKeyboardFunc(Keyboard);
    glutReshapeFunc(Reshape);
    glutMainLoop();
-
    return 0;
 }
