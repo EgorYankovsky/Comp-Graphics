@@ -13,6 +13,13 @@ using namespace std;
 const float PI = 3.141592653589793;
 const float speed = 10.0f;
 
+bool isSmoothNorm = true, 
+     isCarcass = false,
+     isPerspective = true, 
+     isTextured = true, 
+     forward, 
+     isShownGrid = true;
+
 enum rotateAxis
 {
    rotateY, rotateX
@@ -23,9 +30,20 @@ enum MoveMenuFrags
    Up,
    Left,
    Down,
-   Right
+   Right,
+   Forward,
+   Backward
 };
 
+enum LightingMode
+{
+   Directed = 1,
+   Dot1,
+   Dot2,
+   SpotlightSmallAngle,
+   Spotlight,
+   NoLight
+};
 
 struct Point
 {

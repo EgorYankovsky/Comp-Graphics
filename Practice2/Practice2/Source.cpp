@@ -8,8 +8,6 @@ Point* p;
 int light = 5;
 float angle_tiraj, angle_x = 0.0f, angle_y = 0.0f;
 float rotateMatrix[3][3];
-bool isSmoothNorm = true, isCarcass = false,
-isPerspective = true, isTextured = true, forward, hideGrid = false;
 
 struct Figure
 {
@@ -102,7 +100,7 @@ void specialKeys(int key, int x, int y)
 /* Рисование 3D сетки нулевой высоты */
 void Draw3DSGrid()
 {
-   if (!hideGrid)
+   if (isShownGrid)
    {
       glColor3ub(253, 31, 212);
       glLineWidth(3);
@@ -127,7 +125,7 @@ void Keyboard(unsigned char key, int x, int y)
       exit(0);
 
    if (key == 'g')
-      hideGrid = !hideGrid;
+      isShownGrid = !isShownGrid;
 
    /* Добавить повороты на кнопки: q и e */
    if (key == 'c')
@@ -540,31 +538,86 @@ void MoveMenu(int frag)
    switch (frag)
    {
    case Up:
-   {
-      // code here.
-   }
+      Keyboard('z', 0, 0);
+      break;
    case Left:
-   {
-      // code here.
-   }
+      Keyboard('a', 0, 0);
+      break;
    case Down:
-   {
-      // code here.
-   }
+      Keyboard('x', 0, 0);
+      break;
    case Right:
-   {
-
-   }
+      Keyboard('d', 0, 0);
+      break;
+   case Forward:
+      Keyboard('w', 0, 0);
+      break;
+   case Backward:
+      Keyboard('s', 0, 0);
+      break;
    default:
       throw new exception("Unexpected move, bro. Cool your fucking");
       break;
    }
+   glutPostRedisplay();
 }
 
 
 void LightningMenu(int frag)
 {
+   switch (frag)
+   {
+   case Directed:
+      light = 1;
+      break;
+   case Dot1:
+      light = 2;
+      break;
+   case Dot2:
+      light = 3;
+      break;
+   case SpotlightSmallAngle:
+      light = 4;
+      break;
+   case Spotlight:
+      light = 5;
+      break;
+   case NoLight:
+      light = 0;
+      break;
+   default:
+      throw new exception("Unexpected light, bro");
+      break;
+   }
+   glutPostRedisplay();
+}
 
+void MainMenu(int frag)
+{
+   switch (frag)
+   {
+   case 1:
+      Keyboard('t', 0, 0);
+      break;
+   case 2:
+      Keyboard('p', 0, 0);
+      break;
+   case 3:
+      Keyboard('g', 0, 0);
+      break;
+   case 4:
+      Keyboard('c', 0, 0);
+      break;
+   case 5:
+      Keyboard('n', 0, 0);
+      break;
+   case 27:
+      Keyboard(27, 0, 0);
+      break;
+   default:
+      break;
+   }
+   glutPostRedisplay();
 }
 
 void ShowMenu()
@@ -574,9 +627,34 @@ void ShowMenu()
    glutAddMenuEntry("Left", Left);
    glutAddMenuEntry("Down", Down);
    glutAddMenuEntry("Right", Right);
+   glutAddMenuEntry("Forward", Forward);
+   glutAddMenuEntry("Backward", Backward);
 
-   int LightningMenuID = glutCreateMenu(LightningMenu);
+   int LightingMenuID = glutCreateMenu(LightningMenu);
+   glutAddMenuEntry("Directed", Directed);
+   glutAddMenuEntry("Dot1", Dot1);
+   glutAddMenuEntry("Dot2", Dot2);
+   glutAddMenuEntry("SpotlightSmallAngle", SpotlightSmallAngle);
+   glutAddMenuEntry("Spotlight", Spotlight);
+   glutAddMenuEntry("NoLight", NoLight);
+
+
+   int MainMenuID = glutCreateMenu(MainMenu);
+   glutAddSubMenu("Move", MoveMenuID);
+   glutAddSubMenu("Lighting", LightingMenuID);
+
+   // Очень хочется сделать меню динамическим.
+   glutAddMenuEntry(isTextured ? "Hide texture" : "Show texture", 1);
+   glutAddMenuEntry(isPerspective ? "Change to not perspective" : "Change to perspective", 2);
+   glutAddMenuEntry(isShownGrid ? "Hide grid" : "Show grid", 3);
+   glutAddMenuEntry(!isCarcass ? "Show carcass" : "Show material", 4);
+   glutAddMenuEntry(isSmoothNorm ? "Disable smoothing normals" : "Enable this shit", 5);
+   glutAddMenuEntry("Quit", 27);
+
+
+
    glutAttachMenu(GLUT_RIGHT_BUTTON);
+   glutPostRedisplay();
 }
 
 
@@ -625,7 +703,6 @@ int main(int argc, char* argv[])
    glutInit(&argc, argv);
    glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
    int mainWindow = glutCreateWindow("КГ ПМ-02 Саляев Янковский ПЗ 2");
-   ShowMenu();
    glutFullScreen();
 
    glEnable(GL_DEPTH_TEST);
@@ -635,6 +712,7 @@ int main(int argc, char* argv[])
    glutSetCursor(1);
    glutKeyboardFunc(Keyboard);
    glutReshapeFunc(Reshape);
+   ShowMenu();
    glutMainLoop();
    return 0;
 }
