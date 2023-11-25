@@ -3,16 +3,14 @@
 #pragma comment( linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 
 #include "Lab2.h"
-#include "Frags.h"
+#include "Flags.h"
 
-struct Figure
-{
-   vector<Point> Points;
-};
-Point pos, view, strafe, up = { 0.0f, 1.0f, 0.0f };
+
+Point pos;
+Vector strafe, view, up = { 0.0f, 1.0f, 0.0f };
 vector<Figure> Figures;
-vector<Point> Normals;
-vector<Point> SmoothNormals;
+vector<Vector> Normals;
+vector<Vector> SmoothNormals;
 vector<int> Direction;
 vector<float> TexCord = { 0.0f, 0.0f, 1.0f, 0.0f,
                           1.0f, 1.0f, 0.0f, 1.0f };
@@ -22,9 +20,9 @@ GLuint type, tex[2];
 unsigned char* pixels;
 unsigned char* pixels1;
 
-void multiply(Point& vec)
+void Multiply(Vector& vec)
 {
-   vector<float> tmp;
+   vector<float> tmp(3);
    tmp.resize(3);
    for (int i = 0; i < 3; i++)
    {
@@ -39,11 +37,25 @@ void multiply(Point& vec)
 }
 
 /* Изменение вида */
-void rotateView(float angle, int axis)
+void RotateView(float angle, int axis)
 {
    float cosa = cos(angle), sina = sin(angle);
-   if (axis == rotateAxis::rotateY)
+   switch (axis)
    {
+   case RotateX:
+      rotateMatrix[0][0] = cosa + (1.0f - cosa) * strafe.x * strafe.x;
+      rotateMatrix[0][1] = (1.0f - cosa) * strafe.x * strafe.y - sina * strafe.z;
+      rotateMatrix[0][2] = (1.0f - cosa) * strafe.x * strafe.z + sina * strafe.y;
+      rotateMatrix[1][0] = (1.0f - cosa) * strafe.x * strafe.y + sina * strafe.z;
+      rotateMatrix[1][1] = cosa + (1.0f - cosa) * strafe.y * strafe.y;
+      rotateMatrix[1][2] = (1.0f - cosa) * strafe.z * strafe.y - sina * strafe.x;
+      rotateMatrix[2][0] = (1.0f - cosa) * strafe.x * strafe.z - sina * strafe.y;
+      rotateMatrix[2][1] = (1.0f - cosa) * strafe.y * strafe.z + sina * strafe.x;
+      rotateMatrix[2][2] = cosa + (1.0f - cosa) * strafe.z * strafe.z;
+      Multiply(view);
+      Multiply(up);
+      break;
+   case RotateY:
       rotateMatrix[0][0] = cosa + (1.0f - cosa) * up.x * up.x;
       rotateMatrix[0][1] = (1.0f - cosa) * up.x * up.y - sina * up.z;
       rotateMatrix[0][2] = (1.0f - cosa) * up.x * up.z + sina * up.y;
@@ -53,44 +65,54 @@ void rotateView(float angle, int axis)
       rotateMatrix[2][0] = (1.0f - cosa) * up.x * up.z - sina * up.y;
       rotateMatrix[2][1] = (1.0f - cosa) * up.y * up.z + sina * up.x;
       rotateMatrix[2][2] = cosa + (1.0f - cosa) * up.z * up.z;
-      multiply(view);
-      multiply(strafe);
-   }
-   else
-   {
-      rotateMatrix[0][0] = cosa + (1.0f - cosa) * strafe.x * strafe.x;
-      rotateMatrix[0][1] = (1.0f - cosa) * strafe.x * strafe.y - sina *
-         strafe.z;
-      rotateMatrix[0][2] = (1.0f - cosa) * strafe.x * strafe.z + sina *
-         strafe.y;
-      rotateMatrix[1][0] = (1.0f - cosa) * strafe.x * strafe.y + sina *
-         strafe.z;
-      rotateMatrix[1][1] = cosa + (1.0f - cosa) * strafe.y * strafe.y;
-      rotateMatrix[1][2] = (1.0f - cosa) * strafe.z * strafe.y - sina *
-         strafe.x;
-      rotateMatrix[2][0] = (1.0f - cosa) * strafe.x * strafe.z - sina *
-         strafe.y;
-         rotateMatrix[2][1] = (1.0f - cosa) * strafe.y * strafe.z + sina *
-         strafe.x;
-      rotateMatrix[2][2] = cosa + (1.0f - cosa) * strafe.z * strafe.z;
-      multiply(view);
-      multiply(up);
+      Multiply(view);
+      Multiply(strafe);
+      break;
+   case RotateZ:
+      rotateMatrix[0][0] = cosa + (1.0f - cosa) * view.x * view.x;
+      rotateMatrix[0][1] = (1.0f - cosa) * view.x * view.y - sina * view.z;
+      rotateMatrix[0][2] = (1.0f - cosa) * view.x * view.z + sina * view.y;
+      rotateMatrix[1][0] = (1.0f - cosa) * view.x * view.y + sina * view.z;
+      rotateMatrix[1][1] = cosa + (1.0f - cosa) * view.y * view.y;
+      rotateMatrix[1][2] = (1.0f - cosa) * view.z * view.y - sina * view.x;
+      rotateMatrix[2][0] = (1.0f - cosa) * view.x * view.z - sina * view.y;
+      rotateMatrix[2][1] = (1.0f - cosa) * view.y * view.z + sina * view.x;
+      rotateMatrix[2][2] = cosa + (1.0f - cosa) * view.z * view.z;
+      Multiply(up);
+      Multiply(strafe);
+      break;
+   default:
+      throw new exception("Error during rotation");
    }
 }
 
 /* Специальные клавиши */
-void specialKeys(int key, int x, int y)
+void SpecialKeys(int key, int x, int y)
 {
-   //if (key = 'q')
-   //   rotateView();
-   if (key == GLUT_KEY_RIGHT)
-      rotateView(-3.0f * PI / 180.0f, rotateAxis::rotateY);
-   if (key == GLUT_KEY_LEFT)
-      rotateView(3.0f * PI / 180.0f, rotateAxis::rotateY);
-   if (key == GLUT_KEY_DOWN)
-      rotateView(3.0f * PI / 180.0f, rotateAxis::rotateX);
-   if (key == GLUT_KEY_UP)
-      rotateView(-3.0f * PI / 180.0f, rotateAxis::rotateX);
+
+   switch (key)
+   {
+   case GLUT_KEY_RIGHT:
+      RotateView(-3.0f * PI / 180.0f, RotateY);
+      break;
+   case GLUT_KEY_LEFT:
+      RotateView(3.0f * PI / 180.0f, RotateY);
+      break;
+   case GLUT_KEY_DOWN:
+      RotateView(3.0f * PI / 180.0f, RotateX);
+      break;
+   case GLUT_KEY_UP:
+      RotateView(-3.0f * PI / 180.0f, RotateX);
+      break;
+   case 60:
+      RotateView(-3.0f * PI / 180.0f, RotateZ);
+      break;
+   case 62:
+      RotateView(3.0f * PI / 180.0f, RotateZ);
+      break;
+   default:
+      break;
+   }
    glutPostRedisplay();
 }
 
@@ -189,69 +211,60 @@ void Keyboard(unsigned char key, int x, int y)
    glutPostRedisplay();
 }
 
-/* Нормализация вектора */
-void norma(Point& vec)
+// Функционал вроде один и тот же.
+Vector Normal(Point* n1, Point* n2, Point* n3)
 {
-   double sum = 0;
-   sum = sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
-   vec.x /= sum;
-   vec.y /= sum;
-   vec.z /= sum;
-}
-
-Point normal(Point* n1, Point* n2, Point* n3)
-{
-   if (Direction[2] < 0)
+   if (Direction[2] < 0) // Зачем ?
    {
-      Point w(n1->x - n2->x, n1->y - n2->y, n1->z - n2->z);
-      Point v(n3->x - n2->x, n3->y - n2->y, n3->z - n2->z);
-      Point p = Point(v.y * w.z - v.z * w.y, v.z * w.x - v.x * w.z, v.x * w.y - v.y * w.x);
-      norma(p);
+      Vector w(n1->x - n2->x, n1->y - n2->y, n1->z - n2->z);
+      Vector v(n3->x - n2->x, n3->y - n2->y, n3->z - n2->z);
+      Vector p = Vector(v.y * w.z - v.z * w.y, v.z * w.x - v.x * w.z, v.x * w.y - v.y * w.x);
+      p.Normalise();
       return p;
    }
    else
    {
-      Point w(n1->x - n2->x, n1->y - n2->y, n1->z - n2->z);
-      Point v(n3->x - n2->x, n3->y - n2->y, n3->z - n2->z);
-      Point p = Point(v.y * w.z - v.z * w.y, v.z * w.x - v.x * w.z, v.x * w.y - v.y * w.x);
-      norma(p);
+      Vector w(n1->x - n2->x, n1->y - n2->y, n1->z - n2->z);
+      Vector v(n3->x - n2->x, n3->y - n2->y, n3->z - n2->z);
+      Vector p = Vector(v.y * w.z - v.z * w.y, v.z * w.x - v.x * w.z, v.x * w.y - v.y * w.x);
+      p.Normalise();
       return p;
    }
 }
 
-Point addWithNorm(Point & n1, Point & n2, Point & n3)
+Vector AddWithNorm(Vector& n1, Vector& n2, Vector& n3)
 {
-   Point p = Point(n1.x + n2.x + n3.x, n1.y + n2.y + n3.y, n1.z + n2.z + n3.z);
-   norma(p);
+   Vector p = Vector(n1.x + n2.x + n3.x, n1.y + n2.y + n3.y, n1.z + n2.z + n3.z);
+   p.Normalise();
    return p;
 }
 
-void makeNormals()
+void MakeNormals()
 {
    Figure* fg = &Figures[0];
-   Normals.push_back(normal(&fg->Points[1], &fg->Points[0], &fg->Points[3]));
-   Normals.push_back(normal(&fg->Points[2], &fg->Points[1], &fg->Points[0]));
-   Normals.push_back(normal(&fg->Points[3], &fg->Points[2], &fg->Points[1]));
-   Normals.push_back(normal(&fg->Points[0], &fg->Points[3], &fg->Points[2]));
+   Normals.push_back(Normal(&fg->Points[1], &fg->Points[0], &fg->Points[3]));
+   Normals.push_back(Normal(&fg->Points[2], &fg->Points[1], &fg->Points[0]));
+   Normals.push_back(Normal(&fg->Points[3], &fg->Points[2], &fg->Points[1]));
+   Normals.push_back(Normal(&fg->Points[0], &fg->Points[3], &fg->Points[2]));
    for (int i = 1; i < Figures.size(); i++)
    {
       Figure* fg = &Figures[i];
-      Normals.push_back(normal(&fg->Points[3], &fg->Points[0], &fg -> Points[1]));
-      Normals.push_back(normal(&fg->Points[0], &fg->Points[1], &fg -> Points[2]));
-      Normals.push_back(normal(&fg->Points[1], &fg->Points[2], &fg -> Points[3]));
-      Normals.push_back(normal(&fg->Points[2], &fg->Points[3], &fg -> Points[0]));
+      Normals.push_back(Normal(&fg->Points[3], &fg->Points[0], &fg -> Points[1]));
+      Normals.push_back(Normal(&fg->Points[0], &fg->Points[1], &fg -> Points[2]));
+      Normals.push_back(Normal(&fg->Points[1], &fg->Points[2], &fg -> Points[3]));
+      Normals.push_back(Normal(&fg->Points[2], &fg->Points[3], &fg -> Points[0]));
    }
-   SmoothNormals.push_back(addWithNorm(Normals[0], Normals[8], Normals[20]));
-   SmoothNormals.push_back(addWithNorm(Normals[1], Normals[9], Normals[12]));
-   SmoothNormals.push_back(addWithNorm(Normals[2], Normals[13], Normals[17]));
-   SmoothNormals.push_back(addWithNorm(Normals[3], Normals[21], Normals[16]));
-   SmoothNormals.push_back(addWithNorm(Normals[4], Normals[11], Normals[23]));
-   SmoothNormals.push_back(addWithNorm(Normals[5], Normals[15], Normals[10]));
-   SmoothNormals.push_back(addWithNorm(Normals[6], Normals[18], Normals[14]));
-   SmoothNormals.push_back(addWithNorm(Normals[7], Normals[19], Normals[22]));
+   SmoothNormals.push_back(AddWithNorm(Normals[0], Normals[8], Normals[20]));
+   SmoothNormals.push_back(AddWithNorm(Normals[1], Normals[9], Normals[12]));
+   SmoothNormals.push_back(AddWithNorm(Normals[2], Normals[13], Normals[17]));
+   SmoothNormals.push_back(AddWithNorm(Normals[3], Normals[21], Normals[16]));
+   SmoothNormals.push_back(AddWithNorm(Normals[4], Normals[11], Normals[23]));
+   SmoothNormals.push_back(AddWithNorm(Normals[5], Normals[15], Normals[10]));
+   SmoothNormals.push_back(AddWithNorm(Normals[6], Normals[18], Normals[14]));
+   SmoothNormals.push_back(AddWithNorm(Normals[7], Normals[19], Normals[22]));
 }
 
-void Shine_a_Light()
+void ShineLight()
 {
    GLfloat ambience[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
    GLfloat material_diffuse[] = { 0.15f, 0.15f, 0.15f, 1.0f };
@@ -333,7 +346,7 @@ void Shine_a_Light()
    }
 }
 
-bool makeTextures(int n)
+bool MakeTextures(int n)
 {
    BITMAP bmp;
    if (n == 0)
@@ -393,13 +406,13 @@ void Display(void)
    glEnable(GL_LIGHTING);
    glEnable(GL_COLOR_MATERIAL);
    Draw3DSGrid();
-   Shine_a_Light();
+   ShineLight();
    int n = 0;
    while (n != 2)
    {
       glPushMatrix();
       glTranslatef(n * 150, n * 10, n * 10);
-      makeTextures(n);
+      MakeTextures(n);
       for (int i = 0; i < Figures.size(); i++)
       {
          if (isTextured)
@@ -430,7 +443,7 @@ void Display(void)
                   glNormal3f(p->x, p->y, p->z);
                }
             }
-            p = &Figures[i].Points[j];
+            p->ConvertToVector(&Figures[i].Points[j]);
             if (isTextured)
                glTexCoord2f(TexCord[2 * j], TexCord[2 * j + 1]);
             glVertex3f(p->x, p->y, p->z);
@@ -442,7 +455,7 @@ void Display(void)
          glBegin(GL_LINES);
          for (int j = 0; j < 4; j++)
          {
-            p = &Figures[i].Points[j];
+            p->ConvertToVector(&Figures[i].Points[j]);
             if (!isSmoothNorm)
             {
                glVertex3f(p->x, p->y, p->z);
@@ -481,18 +494,16 @@ void Reshape(GLint w, GLint h)
    else
    {
       if (Width > Height)
-         glOrtho(-200 * Width / Height, 200 * Width / Height, -200, 200, 300,
-            -1000);
+         glOrtho(-200 * Width / Height, 200 * Width / Height, -200, 200, 300, -1000);
       else
-         glOrtho(-200, 200, -200 * Width / Height, 200 * Width / Height, 300,
-            -1000);
+         glOrtho(-200, 200, -200 * Width / Height, 200 * Width / Height, 300, -1000);
    }
    glMatrixMode(GL_MODELVIEW);
    glutPostRedisplay();
 }
 
 /* Тиражирование сечений */
-void make_tirajj()
+void MakeTirajj()
 {
    double x, y;
    Figures.push_back(Figure());
@@ -530,7 +541,7 @@ void make_tirajj()
 }
 
 /* Создание, позиционирование камеры */
-void makeCamera()
+void MakeCamera()
 {
    pos.x = (Figures[0].Points[0].x + Figures[0].Points[1].x) / 2.0f;
    pos.y = (Figures[0].Points[0].y + Figures[0].Points[2].y) / 2.0f;
@@ -540,12 +551,12 @@ void makeCamera()
    view.z = -Normals[0].z;
    strafe.x = -view.z;
    strafe.z = view.x;
-   norma(strafe);
+   strafe.Normalise();
 }
 
-void MoveMenu(int frag)
+void MoveMenu(int flag)
 {
-   switch (frag)
+   switch (flag)
    {
    case Up:
       Keyboard('z', 0, 0);
@@ -572,15 +583,15 @@ void MoveMenu(int frag)
    glutPostRedisplay();
 }
 
-void LightningMenu(int frag)
+void LightningMenu(int flag)
 {
-   light = frag;
+   light = flag;
    glutPostRedisplay();
 }
 
-void MainMenu(int frag)
+void MainMenu(int flag)
 {
-   switch (frag)
+   switch (flag)
    {
    case 1:
       Keyboard('t', 0, 0);
@@ -606,6 +617,34 @@ void MainMenu(int frag)
    glutPostRedisplay();
 }
 
+void AngleMenu(int flag)
+{
+   switch (flag)
+   {
+   case PitchUp:
+      SpecialKeys(GLUT_KEY_DOWN, 0, 0);
+      break;
+   case PitchDown:
+      SpecialKeys(GLUT_KEY_UP, 0, 0);
+      break;
+   case RightYaw:
+      SpecialKeys(GLUT_KEY_RIGHT, 0, 0);
+      break;
+   case LeftYaw:
+      SpecialKeys(GLUT_KEY_LEFT, 0, 0);
+      break;
+   case LeftRoll:
+      SpecialKeys('q', 0, 0);
+      break;
+   case RightRoll:
+      SpecialKeys('q', 0, 0);
+      break;
+   default:
+      throw new exception("Kuda move");
+      break;
+   }
+}
+
 void ShowMenu()
 {
    int MoveMenuID = glutCreateMenu(MoveMenu);
@@ -618,16 +657,22 @@ void ShowMenu()
 
    int LightingMenuID = glutCreateMenu(LightningMenu);
    glutAddMenuEntry("Directed", Directed);
-   glutAddMenuEntry("Dot1", Dot1);
-   glutAddMenuEntry("Dot2", Dot2);
-   glutAddMenuEntry("SpotlightSmallAngle", SpotlightSmallAngle);
+   glutAddMenuEntry("Dot 1", Dot1);
+   glutAddMenuEntry("Dot 2", Dot2);
+   glutAddMenuEntry("Spotlight small angle", SpotlightSmallAngle);
    glutAddMenuEntry("Spotlight", Spotlight);
-   glutAddMenuEntry("NoLight", NoLight);
+   glutAddMenuEntry("No light", NoLight);
 
+   int AngleMenuID = glutCreateMenu(AngleMenu);
+   glutAddMenuEntry("Pitch up", PitchUp);
+   glutAddMenuEntry("Pitch down", PitchDown);
+   glutAddMenuEntry("Right yaw", RightYaw);
+   glutAddMenuEntry("Left yaw", LeftYaw);
 
    int MainMenuID = glutCreateMenu(MainMenu);
    glutAddSubMenu("Move", MoveMenuID);
    glutAddSubMenu("Lighting", LightingMenuID);
+   glutAddSubMenu("Angle", AngleMenuID);
 
    // Очень хочется сделать меню динамическим.
    glutAddMenuEntry(isTextured ? "Hide texture" : "Show texture", 1);
@@ -636,8 +681,6 @@ void ShowMenu()
    glutAddMenuEntry(!isCarcass ? "Show carcass" : "Show material", 4);
    glutAddMenuEntry(isSmoothNorm ? "Disable smoothing normals" : "Enable this shit", 5);
    glutAddMenuEntry("Quit", 27);
-
-
 
    glutAttachMenu(GLUT_RIGHT_BUTTON);
    glutPostRedisplay();
@@ -651,7 +694,7 @@ void ShowMenu()
 int main(int argc, char* argv[])
 {
    int x, y, z;
-
+   light = Spotlight;
    /* Считываем данные из файла. */
    fstream fin("Datatxt.txt");
    Direction.resize(3);
@@ -675,13 +718,13 @@ int main(int argc, char* argv[])
 
    // Если Direction[2] == 0, то вылет программы.
    if (Direction[2] != 0)
-      make_tirajj();
+      MakeTirajj();
 
    // Создаем нормали.
-   makeNormals();
+   MakeNormals();
 
    // Создаем камеру.
-   makeCamera();
+   MakeCamera();
 
    // Классика.
    glutInit(&argc, argv);
@@ -692,7 +735,7 @@ int main(int argc, char* argv[])
    glEnable(GL_DEPTH_TEST);
    glEnable(GL_POINT_SMOOTH);
    glutDisplayFunc(Display);
-   glutSpecialFunc(specialKeys);
+   glutSpecialFunc(SpecialKeys);
    glutSetCursor(1);
    glutKeyboardFunc(Keyboard);
    glutReshapeFunc(Reshape);

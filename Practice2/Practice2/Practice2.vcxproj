@@ -134,6 +134,7 @@
     <Text Include="Datatxt.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Flags.h" />
     <ClInclude Include="Lab2.h" />
   </ItemGroup>
   <ItemGroup>
