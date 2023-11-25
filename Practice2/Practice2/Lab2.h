@@ -13,42 +13,23 @@ using namespace std;
 const float PI = 3.141592653589793;
 const float speed = 10.0f;
 
-bool isSmoothNorm = true, 
-     isCarcass = false,
-     isPerspective = true, 
-     isTextured = true, 
-     forward, 
-     isShownGrid = true;
-
-enum rotateAxis
+class Point
 {
-   rotateY, rotateX
-};
-
-enum MoveMenuFrags
-{
-   Up,
-   Left,
-   Down,
-   Right,
-   Forward,
-   Backward
-};
-
-enum LightingMode
-{
-   Directed = 1,
-   Dot1,
-   Dot2,
-   SpotlightSmallAngle,
-   Spotlight,
-   NoLight
-};
-
-struct Point
-{
+private:
    double x, y, z;
+public:
    Point(double _x = 0, double _y = 0, double _z = 0) {
       x = _x; y = _y; z = _z;
    }
 };
+Point* p;
+
+int light = Spotlight;
+float angle_tiraj, angle_x = 0.0f, angle_y = 0.0f;
+float rotateMatrix[3][3];
+
+bool isSmoothNorm = true, 
+     isCarcass = false,
+     isPerspective = true, 
+     isTextured = true, 
+     isShownGrid = true;

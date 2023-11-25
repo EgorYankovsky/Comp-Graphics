@@ -3,11 +3,7 @@
 #pragma comment( linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 
 #include "Lab2.h"
-
-Point* p;
-int light = 5;
-float angle_tiraj, angle_x = 0.0f, angle_y = 0.0f;
-float rotateMatrix[3][3];
+#include "Frags.h"
 
 struct Figure
 {
@@ -18,8 +14,9 @@ vector<Figure> Figures;
 vector<Point> Normals;
 vector<Point> SmoothNormals;
 vector<int> Direction;
-vector<float> TexCord = { 0.0f , 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f };
-GLint Width = GetSystemMetrics(SM_CXSCREEN), Height = GetSystemMetrics(SM_CYSCREEN);
+vector<float> TexCord = { 0.0f, 0.0f, 1.0f, 0.0f,
+                          1.0f, 1.0f, 0.0f, 1.0f };
+GLint Width, Height;
 int texWidth, texHeight;
 GLuint type, tex[2];
 unsigned char* pixels;
@@ -121,61 +118,74 @@ void Draw3DSGrid()
 /* Клавиатурное взаимодействие */
 void Keyboard(unsigned char key, int x, int y)
 {
-   if (key == 27)
-      exit(0);
-
-   if (key == 'g')
-      isShownGrid = !isShownGrid;
-
-   /* Добавить повороты на кнопки: q и e */
-   if (key == 'c')
-      isCarcass = !isCarcass;
-   if (key == 'n')
-      isSmoothNorm = !isSmoothNorm;
-   if (key == 'p')
-      isPerspective = !isPerspective;
-   if (key == 't')
-      isTextured = !isTextured;
-   if (key == 'w')
+   switch (key)
    {
+   case 'g':
+      isShownGrid = !isShownGrid;
+      break;
+   case 'c':
+      isCarcass = !isCarcass;
+      break;
+   case 'n':
+      isSmoothNorm = !isSmoothNorm;
+      break;
+   case 'p':
+      isPerspective = !isPerspective;
+      break;
+   case 't':
+      isTextured = !isTextured;
+      break;
+   case 'w':
       pos.z += speed * view.z;
       pos.x += speed * view.x;
       pos.y += speed * view.y;
-   }
-   if (key == 's')
-   {
+      break;
+   case 's':
       pos.z -= speed * view.z;
       pos.x -= speed * view.x;
       pos.y -= speed * view.y;
-   }
-   if (key == 'a')
-   {
+      break;
+   case 'a':
       pos.z -= speed * strafe.z;
       pos.x -= speed * strafe.x;
       pos.y -= speed * strafe.y;
-   }
-   if (key == 'd')
-   {
+      break;
+   case 'd':
       pos.z += speed * strafe.z;
       pos.x += speed * strafe.x;
       pos.y += speed * strafe.y;
-   }
-   if (key == 'z')
+      break;
+   case 'z':
       pos.y += speed;
-   if (key == 'x')
+      break;
+   case 'x':
       pos.y -= speed;
-   if (key == '1')
+      break;
+   case '1':
       light = 1;
-   if (key == '2')
+      break;
+   case '2':
       light = 2;
-   if (key == '3')
+      break;
+   case '3':
       light = 3;
-   if (key == '4')
+      break;
+   case '4':
       light = 4;
-   if (key == '5')
+      break;
+   case '5':
       light = 5;
-   if (key == '0')
+      break;
+   case '0':
       light = 0;
+      break;
+   case 27:
+      exit(0);
+   default:
+      break;
+   }
+
+   /* Добавить повороты на кнопки: q и e */
    glutPostRedisplay();
 }
 
@@ -562,33 +572,9 @@ void MoveMenu(int frag)
    glutPostRedisplay();
 }
 
-
 void LightningMenu(int frag)
 {
-   switch (frag)
-   {
-   case Directed:
-      light = 1;
-      break;
-   case Dot1:
-      light = 2;
-      break;
-   case Dot2:
-      light = 3;
-      break;
-   case SpotlightSmallAngle:
-      light = 4;
-      break;
-   case Spotlight:
-      light = 5;
-      break;
-   case NoLight:
-      light = 0;
-      break;
-   default:
-      throw new exception("Unexpected light, bro");
-      break;
-   }
+   light = frag;
    glutPostRedisplay();
 }
 
@@ -669,8 +655,6 @@ int main(int argc, char* argv[])
    /* Считываем данные из файла. */
    fstream fin("Datatxt.txt");
    Direction.resize(3);
-
-
 
    /* Аргументы:
    * 1. угол скручивания фигур;
