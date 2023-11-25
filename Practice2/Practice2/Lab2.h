@@ -7,12 +7,24 @@
 #include "glut.h"
 #include <gl/GL.h>
 #include <gl/GLU.h>
+#include "Flags.h"
 
 using namespace std;
 
 const float PI = 3.141592653589793;
 const float speed = 10.0f;
 
+int light = Spotlight;
+float angle_tiraj, angle_x = 0.0f, angle_y = 0.0f;
+float rotateMatrix[3][3];
+vector<int> Direction;
+vector<float> TexCord = { 0.0f, 0.0f, 1.0f, 0.0f,
+                          1.0f, 1.0f, 0.0f, 1.0f };
+GLint Width, Height;
+int texWidth, texHeight;
+GLuint type, tex[2];
+unsigned char* pixels;
+unsigned char* pixels1;
 
 class Point
 {
@@ -23,9 +35,11 @@ public:
 
    Point() {}
 
-   Point (double _x, double _y, double _z) 
+   Point (double x, double y, double z) 
    {
-      x = _x; y = _y; z = _z;
+      this->x = x;
+      this->y = y;
+      this->z = z;
    }
 };
 
@@ -79,7 +93,8 @@ struct Figure
    vector<Point> Points;
 };
 
-
-int light;
-float angle_tiraj, angle_x = 0.0f, angle_y = 0.0f;
-float rotateMatrix[3][3];
+Point pos;
+Vector strafe, view, up = { 0.0f, 1.0f, 0.0f };
+vector<Figure> Figures;
+vector<Vector> Normals;
+vector<Vector> SmoothedNormals;

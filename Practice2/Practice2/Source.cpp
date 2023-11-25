@@ -3,22 +3,6 @@
 #pragma comment( linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
 
 #include "Lab2.h"
-#include "Flags.h"
-
-
-Point pos;
-Vector strafe, view, up = { 0.0f, 1.0f, 0.0f };
-vector<Figure> Figures;
-vector<Vector> Normals;
-vector<Vector> SmoothNormals;
-vector<int> Direction;
-vector<float> TexCord = { 0.0f, 0.0f, 1.0f, 0.0f,
-                          1.0f, 1.0f, 0.0f, 1.0f };
-GLint Width, Height;
-int texWidth, texHeight;
-GLuint type, tex[2];
-unsigned char* pixels;
-unsigned char* pixels1;
 
 void Multiply(Vector& vec)
 {
@@ -86,6 +70,7 @@ void RotateView(float angle, int axis)
    }
 }
 
+/* Call-back */
 /* Специальные клавиши */
 void SpecialKeys(int key, int x, int y)
 {
@@ -137,6 +122,7 @@ void Draw3DSGrid()
    }
 }
 
+/* Call-back */
 /* Клавиатурное взаимодействие */
 void Keyboard(unsigned char key, int x, int y)
 {
@@ -184,22 +170,26 @@ void Keyboard(unsigned char key, int x, int y)
       pos.y -= speed;
       break;
    case '1':
-      light = 1;
+      light = Directed;
       break;
    case '2':
-      light = 2;
+      light = Dot1;
       break;
    case '3':
-      light = 3;
+      light = Dot2;
       break;
    case '4':
-      light = 4;
+      light = SpotlightSmallAngle;
       break;
    case '5':
-      light = 5;
+      light = Spotlight;
       break;
    case '0':
-      light = 0;
+      light = NoLight;
+      break;
+   case 60:
+   case 62:
+      SpecialKeys(key, 0, 0);
       break;
    case 27:
       exit(0);
@@ -214,22 +204,27 @@ void Keyboard(unsigned char key, int x, int y)
 // Функционал вроде один и тот же.
 Vector Normal(Point* n1, Point* n2, Point* n3)
 {
-   if (Direction[2] < 0) // Зачем ?
-   {
-      Vector w(n1->x - n2->x, n1->y - n2->y, n1->z - n2->z);
-      Vector v(n3->x - n2->x, n3->y - n2->y, n3->z - n2->z);
-      Vector p = Vector(v.y * w.z - v.z * w.y, v.z * w.x - v.x * w.z, v.x * w.y - v.y * w.x);
-      p.Normalise();
-      return p;
-   }
-   else
-   {
-      Vector w(n1->x - n2->x, n1->y - n2->y, n1->z - n2->z);
-      Vector v(n3->x - n2->x, n3->y - n2->y, n3->z - n2->z);
-      Vector p = Vector(v.y * w.z - v.z * w.y, v.z * w.x - v.x * w.z, v.x * w.y - v.y * w.x);
-      p.Normalise();
-      return p;
-   }
+   Vector w(n1->x - n2->x, n1->y - n2->y, n1->z - n2->z);
+   Vector v(n3->x - n2->x, n3->y - n2->y, n3->z - n2->z);
+   Vector p = Vector(v.y * w.z - v.z * w.y, v.z * w.x - v.x * w.z, v.x * w.y - v.y * w.x);
+   p.Normalise();
+   return p;
+   //if (Direction[2] < 0) // Зачем ?
+   //{
+   //   Vector w(n1->x - n2->x, n1->y - n2->y, n1->z - n2->z);
+   //   Vector v(n3->x - n2->x, n3->y - n2->y, n3->z - n2->z);
+   //   Vector p = Vector(v.y * w.z - v.z * w.y, v.z * w.x - v.x * w.z, v.x * w.y - v.y * w.x);
+   //   p.Normalise();
+   //   return p;
+   //}
+   //else
+   //{
+   //   Vector w(n1->x - n2->x, n1->y - n2->y, n1->z - n2->z);
+   //   Vector v(n3->x - n2->x, n3->y - n2->y, n3->z - n2->z);
+   //   Vector p = Vector(v.y * w.z - v.z * w.y, v.z * w.x - v.x * w.z, v.x * w.y - v.y * w.x);
+   //   p.Normalise();
+   //   return p;
+   //}
 }
 
 Vector AddWithNorm(Vector& n1, Vector& n2, Vector& n3)
@@ -254,95 +249,113 @@ void MakeNormals()
       Normals.push_back(Normal(&fg->Points[1], &fg->Points[2], &fg -> Points[3]));
       Normals.push_back(Normal(&fg->Points[2], &fg->Points[3], &fg -> Points[0]));
    }
-   SmoothNormals.push_back(AddWithNorm(Normals[0], Normals[8], Normals[20]));
-   SmoothNormals.push_back(AddWithNorm(Normals[1], Normals[9], Normals[12]));
-   SmoothNormals.push_back(AddWithNorm(Normals[2], Normals[13], Normals[17]));
-   SmoothNormals.push_back(AddWithNorm(Normals[3], Normals[21], Normals[16]));
-   SmoothNormals.push_back(AddWithNorm(Normals[4], Normals[11], Normals[23]));
-   SmoothNormals.push_back(AddWithNorm(Normals[5], Normals[15], Normals[10]));
-   SmoothNormals.push_back(AddWithNorm(Normals[6], Normals[18], Normals[14]));
-   SmoothNormals.push_back(AddWithNorm(Normals[7], Normals[19], Normals[22]));
+   SmoothedNormals.push_back(AddWithNorm(Normals[0], Normals[8], Normals[20]));
+   SmoothedNormals.push_back(AddWithNorm(Normals[1], Normals[9], Normals[12]));
+   SmoothedNormals.push_back(AddWithNorm(Normals[2], Normals[13], Normals[17]));
+   SmoothedNormals.push_back(AddWithNorm(Normals[3], Normals[21], Normals[16]));
+   SmoothedNormals.push_back(AddWithNorm(Normals[4], Normals[11], Normals[23]));
+   SmoothedNormals.push_back(AddWithNorm(Normals[5], Normals[15], Normals[10]));
+   SmoothedNormals.push_back(AddWithNorm(Normals[6], Normals[18], Normals[14]));
+   SmoothedNormals.push_back(AddWithNorm(Normals[7], Normals[19], Normals[22]));
 }
 
 void ShineLight()
 {
    GLfloat ambience[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
-   GLfloat material_diffuse[] = { 0.15f, 0.15f, 0.15f, 1.0f };
-   glMaterialfv(GL_FRONT, GL_DIFFUSE, material_diffuse);
+   GLfloat materialDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+   GLfloat lightDiffuse[] = { 0.7f, 0.7f, 0.7f };
+   GLfloat lightDirection[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+   GLfloat lightPosition[] = { 0.0f, 1000.0f, 0.0f, 1.0f };
+   GLfloat lightSpotDirection[] = { 0.0f, 1.0f, 1.0f };
+
+   /*
+   * glMaterialfv - задает параметры материала для модели освещения.
+   * GL_FRONT - 
+   * GL_DIFFUSE - 
+   */
+   glMaterialfv(GL_FRONT, GL_DIFFUSE, materialDiffuse);
+
+   /*
+   * glLightModeli - задает параметры модели освещения.
+   * GL_LIGHT_MODEL_TWO_SIDE - 
+   * GL_TRUE - 
+   */
    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+   
+   /*
+   * glEnable - позволяют включить или отключить возможности OpenGL.
+   * GL_COLOR_MATERIAL
+   */
    glEnable(GL_COLOR_MATERIAL);
-   //направленный
-   if (light == 1)
+
+   switch (light)
    {
-      GLfloat light0_diffuse[] = { 0.7f, 0.7f, 0.7f };
-      GLfloat light0_direction[] = { 1.0f, 0.0f, 0.0f, 0.0f };
+   case Directed:
       glEnable(GL_LIGHT0);
-      glLightfv(GL_LIGHT0, GL_DIFFUSE, light0_diffuse);
-      glLightfv(GL_LIGHT0, GL_POSITION, light0_direction);
-   }
-   //точечный
-   if (light == 2)
-   {
+      glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse);
+      glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+      break;
+   case Dot1:
       //убывание интенсивности с расстоянием
       //отключено (по умолчанию)
-      GLfloat light1_diffuse[] = { 0.0f, 0.0f, 1.0f };// синий
-      GLfloat light1_position[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+      lightDiffuse[0] = 0.0f;
+      lightDiffuse[1] = 0.0f;
+      lightDiffuse[2] = 1.0f;
       glEnable(GL_LIGHT1);
       glLightfv(GL_LIGHT1, GL_AMBIENT, ambience);
-      glLightfv(GL_LIGHT1, GL_DIFFUSE, light1_diffuse);
-      glLightfv(GL_LIGHT1, GL_POSITION, light1_position);
-   }
-   //точечный
-   if (light == 3)
-   {
+      glLightfv(GL_LIGHT1, GL_DIFFUSE, lightDiffuse);
+      glLightfv(GL_LIGHT1, GL_POSITION, lightPosition);
+      break;
+   case Dot2:
       //убывание интенсивности с расстоянием
-      GLfloat light2_diffuse[] = { 0.0, 1.0, 1.0 };//желтый
-      GLfloat light2_position[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+      lightDiffuse[0] = 0.0f;
+      lightDiffuse[1] = 1.0f;
+      lightDiffuse[2] = 0.0f;
       glEnable(GL_LIGHT2);
       glLightfv(GL_LIGHT2, GL_AMBIENT, ambience);
-      glLightfv(GL_LIGHT2, GL_DIFFUSE, light2_diffuse);
-      glLightfv(GL_LIGHT2, GL_POSITION, light2_position);
+      glLightfv(GL_LIGHT2, GL_DIFFUSE, lightDiffuse);
+      glLightfv(GL_LIGHT2, GL_POSITION, lightPosition);
       glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, 1.0);
       glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, 0.0);
       glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, 0.0);
-   }
-   //прожектор маленький угол
-   if (light == 4)
-   {
+      break;
+   case SpotlightSmallAngle:
       //убывание интенсивности с расстоянием
       //отключено (по умолчанию)
-      GLfloat light3_diffuse[] = { 1.0, 0.0, 0.0 };//красный
-      GLfloat light3_position[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-      GLfloat light3_spot_direction[] = { 0.0f, 1.0f, 1.0f };
+      lightDiffuse[0] = 1.0f;
+      lightDiffuse[1] = 0.0f;
+      lightDiffuse[2] = 0.0f;
       glEnable(GL_LIGHT3);
       glLightfv(GL_LIGHT3, GL_AMBIENT, ambience);
-      glLightfv(GL_LIGHT3, GL_DIFFUSE, light3_diffuse);
-      glLightfv(GL_LIGHT3, GL_POSITION, light3_position);
+      glLightfv(GL_LIGHT3, GL_DIFFUSE, lightDiffuse);
+      glLightfv(GL_LIGHT3, GL_POSITION, lightPosition);
       glLightf(GL_LIGHT3, GL_SPOT_CUTOFF, 60);
-      glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, light3_spot_direction);
-   }
-   //прожектор
-   if (light == 5)
-   {
+      glLightfv(GL_LIGHT3, GL_SPOT_DIRECTION, lightSpotDirection);
+      break;
+   case Spotlight:
       //включен рассчет убывания интенсивности для прожектора
-      GLfloat light4_diffuse[] = { 1.0f, 1.0f, 0.0f };//желтый
-      GLfloat light4_position[] = { 0.0f, 0.0f, 50.0f, 1.0f };
-      GLfloat light4_spot_direction[] = { 0.0f, 0.0f, -1.0f };
+      lightDiffuse[0] = 1.0f;
+      lightDiffuse[1] = 1.0f;
+      lightDiffuse[2] = 0.0f;
       glEnable(GL_LIGHT4);
       glLightfv(GL_LIGHT4, GL_AMBIENT, ambience);
-      glLightfv(GL_LIGHT4, GL_DIFFUSE, light4_diffuse);
-      glLightfv(GL_LIGHT4, GL_POSITION, light4_position);
+      glLightfv(GL_LIGHT4, GL_DIFFUSE, lightDiffuse);
+      glLightfv(GL_LIGHT4, GL_POSITION, lightPosition);
       glLightf(GL_LIGHT4, GL_SPOT_CUTOFF, 150);
-      glLightfv(GL_LIGHT4, GL_SPOT_DIRECTION, light4_spot_direction);
+      glLightfv(GL_LIGHT4, GL_SPOT_DIRECTION, lightSpotDirection);
       glLightf(GL_LIGHT4, GL_SPOT_EXPONENT, 15.0);
-   }
-   if (light == 0)
-   {
+      break;
+   case NoLight:
       glDisable(GL_LIGHT0);
       glDisable(GL_LIGHT1);
       glDisable(GL_LIGHT2);
       glDisable(GL_LIGHT3);
       glDisable(GL_LIGHT4);
+      break;
+   default:
+      throw new exception("Unexpected lighting mode.");
+      
    }
 }
 
@@ -379,6 +392,8 @@ bool MakeTextures(int n)
     return true;
 }
 
+/* Call-back */
+/* C вероятностью 99% ошибка здесь */
 void Display(void)
 {
    glMatrixMode(GL_MODELVIEW);
@@ -401,7 +416,7 @@ void Display(void)
          glOrtho(-200, 200, -200 * Width / Height,
                   200 * Width / Height, 300, -1000);
    }
-   glClearColor(0.5, 0.7, 0.7, 1);
+   glClearColor(0.5, 0.5, 0.5, 1.0); // Фон.
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    glEnable(GL_LIGHTING);
    glEnable(GL_COLOR_MATERIAL);
@@ -434,12 +449,12 @@ void Display(void)
             {
                if (i < 2)
                {
-                  p = &SmoothNormals[4 * i + j];
+                  p = &SmoothedNormals[4 * i + j];
                   glNormal3f(p->x, p->y, p->z);
                }
                else
                {
-                  p = &SmoothNormals[4 * (j / 2) + i % 3 + j % 2];
+                  p = &SmoothedNormals[4 * (j / 2) + i % 3 + j % 2];
                   glNormal3f(p->x, p->y, p->z);
                }
             }
@@ -464,8 +479,8 @@ void Display(void)
             else if (i < 2)
             {
                glVertex3f(p->x, p->y, p->z);
-               glVertex3f(p->x + SmoothNormals[4 * i + j].x * 50, p->y +
-                  SmoothNormals[4 * i + j].y * 50, p->z + SmoothNormals[4 * i + j].z * 50);
+               glVertex3f(p->x + SmoothedNormals[4 * i + j].x * 50, p->y +
+                  SmoothedNormals[4 * i + j].y * 50, p->z + SmoothedNormals[4 * i + j].z * 50);
             }
          }
          glEnd();
@@ -481,6 +496,7 @@ void Display(void)
    glutSwapBuffers();
 }
 
+/* Call-back */
 /* Уже было */
 void Reshape(GLint w, GLint h)
 {
@@ -634,10 +650,10 @@ void AngleMenu(int flag)
       SpecialKeys(GLUT_KEY_LEFT, 0, 0);
       break;
    case LeftRoll:
-      SpecialKeys('q', 0, 0);
+      SpecialKeys(60, 0, 0);
       break;
    case RightRoll:
-      SpecialKeys('q', 0, 0);
+      SpecialKeys(62, 0, 0);
       break;
    default:
       throw new exception("Kuda move");
@@ -668,6 +684,8 @@ void ShowMenu()
    glutAddMenuEntry("Pitch down", PitchDown);
    glutAddMenuEntry("Right yaw", RightYaw);
    glutAddMenuEntry("Left yaw", LeftYaw);
+   glutAddMenuEntry("Left roll", LeftRoll);
+   glutAddMenuEntry("Right roll", RightRoll);
 
    int MainMenuID = glutCreateMenu(MainMenu);
    glutAddSubMenu("Move", MoveMenuID);
@@ -689,12 +707,12 @@ void ShowMenu()
 
 /* Общие замечания:
 * 1. Одна фигура статична, вторая двигается относительно нее при перемещении камеры. Баг или фича?
+* 2. Неправильная отрисовка освещения на 4/6 сторонах. (Возможно проблема в неправильном расположении сторон).
 */
 
 int main(int argc, char* argv[])
 {
    int x, y, z;
-   light = Spotlight;
    /* Считываем данные из файла. */
    fstream fin("Datatxt.txt");
    Direction.resize(3);
@@ -715,10 +733,11 @@ int main(int argc, char* argv[])
       Figures[0].Points.push_back(Point(x, y, z));
    }
    fin.close();
-
    // Если Direction[2] == 0, то вылет программы.
-   if (Direction[2] != 0)
-      MakeTirajj();
+   if (Direction[2] == 0)
+      throw new exception("Figure is 2-dim. Emergency exit");
+
+   MakeTirajj();
 
    // Создаем нормали.
    MakeNormals();
