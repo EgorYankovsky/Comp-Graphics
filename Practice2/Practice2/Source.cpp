@@ -122,6 +122,30 @@ void Draw3DSGrid()
    }
 }
 
+/* Рисование базисных нормалей из (0, 0, 0) */
+void DrawBasisNormals()
+{
+   glLineWidth(10);
+   glBegin(GL_LINES);
+   
+   /* Красным - Ox влево */
+   glColor4ub(255, 0, 0, 0);
+   glVertex3f(0, 0, 0);
+   glVertex3f(10, 0, 0);
+
+   /* Зеленым - Oy вверх */
+   glColor4ub(0, 255, 0, 0);
+   glVertex3f(0, 0, 0);
+   glVertex3f(0, 10, 0);
+
+   /* Синим - Oz вперед */
+   glColor4ub(0, 0, 255, 0);
+   glVertex3f(0, 0, 0);
+   glVertex3f(0, 0, 10);
+   glEnd();
+}
+
+
 /* Call-back */
 /* Клавиатурное взаимодействие */
 void Keyboard(unsigned char key, int x, int y)
@@ -259,15 +283,17 @@ void MakeNormals()
    SmoothedNormals.push_back(AddWithNorm(Normals[7], Normals[19], Normals[22]));
 }
 
+
+/* Потенциальная ошибка в освещении */
 void ShineLight()
 {
    GLfloat ambience[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
    GLfloat materialDiffuse[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
    GLfloat lightDiffuse[] = { 0.7f, 0.7f, 0.7f };
-   GLfloat lightDirection[] = { 1.0f, 0.0f, 0.0f, 0.0f };
-   GLfloat lightPosition[] = { 0.0f, 1000.0f, 0.0f, 1.0f };
-   GLfloat lightSpotDirection[] = { 0.0f, 1.0f, 1.0f };
+   GLfloat lightDirection[] = { 0.0f, 0.0f, 1.0f, 0.0f };   // Нигде не используется.
+   GLfloat lightPosition[] = { 37.5f, 0.0f, 25.0f, 1.0f };
+   GLfloat lightSpotDirection[] = { 0.0f, 1.0f, 0.0f };
 
    /*
    * glMaterialfv - задает параметры материала для модели освещения.
@@ -416,11 +442,17 @@ void Display(void)
          glOrtho(-200, 200, -200 * Width / Height,
                   200 * Width / Height, 300, -1000);
    }
-   glClearColor(0.5, 0.5, 0.5, 1.0); // Фон.
+   glClearColor(0.7, 0.7, 0.7, 1.0); // Фон.
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
    glEnable(GL_LIGHTING);
    glEnable(GL_COLOR_MATERIAL);
    Draw3DSGrid();
+   DrawBasisNormals();
+   Lantern lant;
+   GLfloat arr1[] = { 0.0, 0.0, 0.0, 0.0 };
+   GLfloat arr2[] = { 0.0, 0.0, 0.0, 0.0 };
+   lant.BuildLantern(arr1, arr2);
+   lant.PrintLantern();
    ShineLight();
    int n = 0;
    while (n != 2)
@@ -599,7 +631,7 @@ void MoveMenu(int flag)
    glutPostRedisplay();
 }
 
-void LightningMenu(int flag)
+void LightingMenu(int flag)
 {
    light = flag;
    glutPostRedisplay();
@@ -671,7 +703,7 @@ void ShowMenu()
    glutAddMenuEntry("Forward", Forward);
    glutAddMenuEntry("Backward", Backward);
 
-   int LightingMenuID = glutCreateMenu(LightningMenu);
+   int LightingMenuID = glutCreateMenu(LightingMenu);
    glutAddMenuEntry("Directed", Directed);
    glutAddMenuEntry("Dot 1", Dot1);
    glutAddMenuEntry("Dot 2", Dot2);
