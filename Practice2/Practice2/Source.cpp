@@ -292,8 +292,8 @@ void ShineLight()
 
    GLfloat lightDiffuse[] = { 0.7f, 0.7f, 0.7f };
    GLfloat lightDirection[] = { 0.0f, 0.0f, 1.0f, 0.0f };   // Нигде не используется.
-   GLfloat lightPosition[] = { 37.5f, 0.0f, 25.0f, 1.0f };
-   GLfloat lightSpotDirection[] = { 0.0f, 1.0f, 0.0f };
+   GLfloat lightPosition[] = { 0.0f, -100.0f, 0.0f, 1.0f };
+   GLfloat lightSpotDirection[] = { 0.0f, 0.0f, 1.0f };
 
    /*
    * glMaterialfv - задает параметры материала для модели освещения.
@@ -455,7 +455,7 @@ void Display(void)
    lant.PrintLantern();
    ShineLight();
    int n = 0;
-   while (n != 2)
+   while (n != 1)
    {
       glPushMatrix();
       glTranslatef(n * 150, n * 10, n * 10);
